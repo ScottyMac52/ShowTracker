@@ -45,25 +45,25 @@ jobs:
           )
           # =================
 
-          $solutions = @(Get-ChildItem -Path . -Recurse -Filter *.sln -File |
+          $solutions = @(Get-ChildItem -Path . -Recurse -File |
             Where-Object {
+              ($_.Extension -eq '.sln' -or $_.Extension -eq '.slnx') -and
               $_.FullName -notmatch '\\bin\\' -and
               $_.FullName -notmatch '\\obj\\'
             })
-
+          
           if ($solutions.Count -eq 0) {
-            throw "No .sln file was found."
+            throw "No .sln or .slnx file was found."
           }
-
+          
           if ($solutions.Count -gt 1) {
-            Write-Host "Multiple .sln files were found:"
+            Write-Host "Multiple solution files were found:"
             foreach ($solution in $solutions) {
               Write-Host "  $($solution.FullName)"
             }
-
+          
             throw "Automatic solution detection is ambiguous."
           }
-
           $solutionFile = $solutions[0]
 
           $projects = @(Get-ChildItem -Path . -Recurse -Filter *.csproj -File |
