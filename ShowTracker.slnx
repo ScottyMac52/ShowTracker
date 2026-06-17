@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ShowTracker.Application.Tests/ShowTracker.Application.Tests.csproj" />
+  <Project Path="ShowTracker.Application/ShowTracker.Application.csproj" />
+  <Project Path="ShowTracker.Domain.Tests/ShowTracker.Domain.Tests.csproj" />
+  <Project Path="ShowTracker.Domain/ShowTracker.Domain.csproj" />
+</Solution>
