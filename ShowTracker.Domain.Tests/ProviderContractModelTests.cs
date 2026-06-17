@@ -1,5 +1,4 @@
-﻿using ShowTracker.Domain;
-using ShowTracker.Domain.Models;
+﻿using ShowTracker.Domain.Models;
 
 namespace ShowTracker.Domain.Tests;
 

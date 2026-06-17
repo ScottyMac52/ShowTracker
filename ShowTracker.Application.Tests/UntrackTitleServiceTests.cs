@@ -1,4 +1,6 @@
-﻿namespace ShowTracker.Application.Tests;
+﻿using ShowTracker.Testing;
+
+namespace ShowTracker.Application.Tests;
 
 public sealed class UntrackTitleServiceTests
 {

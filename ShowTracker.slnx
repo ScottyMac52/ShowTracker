@@ -3,4 +3,5 @@
   <Project Path="ShowTracker.Application/ShowTracker.Application.csproj" />
   <Project Path="ShowTracker.Domain.Tests/ShowTracker.Domain.Tests.csproj" />
   <Project Path="ShowTracker.Domain/ShowTracker.Domain.csproj" />
+  <Project Path="ShowTracker.Testing/ShowTracker.Testing.csproj" />
 </Solution>

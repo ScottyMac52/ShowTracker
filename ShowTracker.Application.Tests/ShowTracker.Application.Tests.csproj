@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ShowTracker.Application\ShowTracker.Application.csproj" />
     <ProjectReference Include="..\ShowTracker.Domain\ShowTracker.Domain.csproj" />
+    <ProjectReference Include="..\ShowTracker.Testing\ShowTracker.Testing.csproj" />
   </ItemGroup>
 
 </Project>
