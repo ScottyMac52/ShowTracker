@@ -8,9 +8,11 @@
 /// <param name="Type">Is it a Show or Movie?</param>
 /// <param name="Year">Year</param>
 /// <param name="Platform">Platform</param>
+/// <param name="Score">How relevant is the result row to what was searched for?</param>
 public sealed record TitleSearchResult(
     string ProviderId,
     string Title,
     TrackedTitleType Type,
     int? Year = null,
-    string? Platform = null);
+    string? Platform = null,
+    double? Score = null);

@@ -43,6 +43,10 @@ public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
 
         return showResults
             .Concat(movieResults)
+            .OrderByDescending(result =>
+                string.Equals(result.Title, normalizedQuery, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(result => result.Score ?? 0)
+            .Take(10)
             .ToArray();
     }
 
@@ -87,7 +91,8 @@ public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
                 ProviderId: result.Show.Ids.Trakt?.ToString() ?? result.Show.Title,
                 Title: result.Show.Title,
                 Type: TrackedTitleType.Show,
-                Year: result.Show.Year);
+                Year: result.Show.Year,
+                Score: result.Score);
         }
 
         if (result.Movie is not null)
@@ -96,7 +101,8 @@ public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
                 ProviderId: result.Movie.Ids.Trakt?.ToString() ?? result.Movie.Title,
                 Title: result.Movie.Title,
                 Type: TrackedTitleType.Movie,
-                Year: result.Movie.Year);
+                Year: result.Movie.Year,
+                Score: result.Score);
         }
 
         return null;
@@ -105,6 +111,7 @@ public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
     private sealed class TraktSearchResult
     {
         public string Type { get; set; } = "";
+        public double? Score { get; set; }
         public TraktTitle? Show { get; set; }
         public TraktTitle? Movie { get; set; }
     }

@@ -245,6 +245,134 @@ public sealed class TraktTitleSearchClientTests
         Assert.Empty(results);
     }
 
+    [Fact]
+    public async Task SearchTitlesAsync_Maps_Search_Score()
+    {
+        var client = CreateClient(
+        [
+            """
+        [
+          {
+            "type": "show",
+            "score": 987.65,
+            "show": {
+              "title": "FROM",
+              "year": 2022,
+              "ids": {
+                "trakt": 12345
+              }
+            }
+          }
+        ]
+        """,
+        "[]"
+        ]);
+
+        var results = await client.SearchTitlesAsync("FROM");
+
+        var result = Assert.Single(results);
+        Assert.Equal(987.65, result.Score);
+    }
+
+    [Fact]
+    public async Task SearchTitlesAsync_Orders_Exact_Title_Matches_First_Then_By_Score()
+    {
+        var client = CreateClient(
+        [
+            """
+        [
+          {
+            "type": "show",
+            "score": 100,
+            "show": {
+              "title": "Stories From Somewhere",
+              "year": 2020,
+              "ids": {
+                "trakt": 1
+              }
+            }
+          },
+          {
+            "type": "show",
+            "score": 50,
+            "show": {
+              "title": "FROM",
+              "year": 2022,
+              "ids": {
+                "trakt": 2
+              }
+            }
+          },
+          {
+            "type": "show",
+            "score": 75,
+            "show": {
+              "title": "From",
+              "year": 2022,
+              "ids": {
+                "trakt": 3
+              }
+            }
+          }
+        ]
+        """,
+        """
+        [
+          {
+            "type": "movie",
+            "score": 200,
+            "movie": {
+              "title": "A Movie From Mars",
+              "year": 2019,
+              "ids": {
+                "trakt": 4
+              }
+            }
+          }
+        ]
+        """
+        ]);
+
+        var results = await client.SearchTitlesAsync("FROM");
+
+        Assert.Equal(4, results.Count);
+        Assert.Equal("From", results[0].Title);
+        Assert.Equal("FROM", results[1].Title);
+        Assert.Equal("A Movie From Mars", results[2].Title);
+        Assert.Equal("Stories From Somewhere", results[3].Title);
+    }
+
+    [Fact]
+    public async Task SearchTitlesAsync_Limits_Results_To_Top_Ten()
+    {
+        var showJson = """
+        [
+          { "type": "show", "score": 20, "show": { "title": "Show 01", "year": 2020, "ids": { "trakt": 1 } } },
+          { "type": "show", "score": 19, "show": { "title": "Show 02", "year": 2020, "ids": { "trakt": 2 } } },
+          { "type": "show", "score": 18, "show": { "title": "Show 03", "year": 2020, "ids": { "trakt": 3 } } },
+          { "type": "show", "score": 17, "show": { "title": "Show 04", "year": 2020, "ids": { "trakt": 4 } } },
+          { "type": "show", "score": 16, "show": { "title": "Show 05", "year": 2020, "ids": { "trakt": 5 } } },
+          { "type": "show", "score": 15, "show": { "title": "Show 06", "year": 2020, "ids": { "trakt": 6 } } },
+          { "type": "show", "score": 14, "show": { "title": "Show 07", "year": 2020, "ids": { "trakt": 7 } } },
+          { "type": "show", "score": 13, "show": { "title": "Show 08", "year": 2020, "ids": { "trakt": 8 } } },
+          { "type": "show", "score": 12, "show": { "title": "Show 09", "year": 2020, "ids": { "trakt": 9 } } },
+          { "type": "show", "score": 11, "show": { "title": "Show 10", "year": 2020, "ids": { "trakt": 10 } } },
+          { "type": "show", "score": 10, "show": { "title": "Show 11", "year": 2020, "ids": { "trakt": 11 } } }
+        ]
+        """;
+
+        var client = CreateClient(
+        [
+            showJson,
+        "[]"
+        ]);
+
+        var results = await client.SearchTitlesAsync("Show");
+
+        Assert.Equal(10, results.Count);
+        Assert.DoesNotContain(results, result => result.Title == "Show 11");
+    }
+
     private static TraktTitleSearchClient CreateClient(
         IReadOnlyList<string> responseJson)
     {
