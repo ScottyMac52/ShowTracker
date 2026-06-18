@@ -1,11 +1,13 @@
 ﻿using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ShowTracker.Testing;
 
 /// <summary>
 /// Implements a test double for the <see cref="ITitleTrackingProvider"/> interface, allowing tests to specify custom behavior for each method via delegate properties.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class TestTitleTrackingProvider : ITitleTrackingProvider
 {
     /// <summary>

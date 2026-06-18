@@ -1,11 +1,13 @@
 ﻿using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ShowTracker.Testing;
 
 /// <summary>
 /// Implements <see cref="ITrackedTitleRepository"/> for testing purposes. This class allows you to set custom handlers for each method, enabling you to simulate different scenarios and behaviors when testing components that depend on the <see cref="ITrackedTitleRepository"/>. Each method checks if the corresponding handler is set and invokes it; if a handler is not set, it throws a <see cref="NotImplementedException"/> to indicate that the method has not been implemented for the test scenario. This approach provides flexibility in testing various conditions without needing to create multiple concrete implementations of the repository.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class TestTrackedTitleRepository : ITrackedTitleRepository
 {
     /// <summary>

@@ -1,11 +1,13 @@
 ﻿using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ShowTracker.Testing;
 
 /// <summary>
 /// Test double for the <see cref="IWatchTrackingProvider"/> interface, allowing tests to specify custom behavior for each method via delegate properties. This class is used in unit tests to mock the behavior of a watch tracking provider and verify that the application logic interacts with it correctly.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class TestWatchTrackingProvider : IWatchTrackingProvider
 {
     /// <summary>

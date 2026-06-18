@@ -1,11 +1,13 @@
 ﻿using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ShowTracker.Testing;
 
 /// <summary>
 /// Implements <see cref="IWatchProgressRepository"/> for testing purposes. This test repository allows for the simulation of saving and retrieving watch progress data without relying on an actual data storage mechanism. It provides handlers that can be set to define the behavior of the save and get operations, making it useful for unit testing scenarios where the watch progress repository is a dependency. The test repository can be used to verify that the application logic interacts correctly with the watch progress repository and handles the expected data as intended.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class TestWatchProgressRepository : IWatchProgressRepository
 {
     /// <summary>
