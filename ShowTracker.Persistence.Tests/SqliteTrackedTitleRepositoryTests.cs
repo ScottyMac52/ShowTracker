@@ -66,6 +66,57 @@ public sealed class SqliteTrackedTitleRepositoryTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task FindByProviderIdAsync_Returns_Null_When_Missing()
+    {
+        var repository = CreateRepository();
+
+        var result = await repository.FindByProviderIdAsync("missing");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task AddAsync_Rejects_Null_Title()
+    {
+        var repository = CreateRepository();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            repository.AddAsync(null!));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task RemoveAsync_Rejects_Blank_Provider_Id(string providerId)
+    {
+        var repository = CreateRepository();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            repository.RemoveAsync(providerId));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task FindByProviderIdAsync_Rejects_Blank_Provider_Id(string providerId)
+    {
+        var repository = CreateRepository();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            repository.FindByProviderIdAsync(providerId));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_Returns_Empty_List_When_None_Exist()
+    {
+        var repository = CreateRepository();
+
+        var results = await repository.GetAllAsync();
+
+        Assert.Empty(results);
+    }
+
     private static SqliteTrackedTitleRepository CreateRepository()
     {
         var connection = new SqliteConnection("Data Source=:memory:");

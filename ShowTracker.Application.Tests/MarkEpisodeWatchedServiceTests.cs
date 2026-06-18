@@ -1,34 +1,55 @@
-﻿using ShowTracker.Testing;
+﻿using ShowTracker.Application;
+using ShowTracker.Domain.Models;
+using ShowTracker.Testing;
 
 namespace ShowTracker.Application.Tests;
 
 public sealed class MarkEpisodeWatchedServiceTests
 {
     [Fact]
-    public async Task MarkEpisodeWatchedAsync_Calls_Provider()
+    public async Task MarkEpisodeWatchedAsync_Saves_Progress()
     {
-        string? capturedShowTitle = null;
-        int capturedSeasonNumber = 0;
-        int capturedEpisodeNumber = 0;
+        WatchProgress? savedProgress = null;
 
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            MarkEpisodeWatchedAsyncHandler = (showTitle, seasonNumber, episodeNumber, _) =>
+            SaveAsyncHandler = (progress, _) =>
             {
-                capturedShowTitle = showTitle;
-                capturedSeasonNumber = seasonNumber;
-                capturedEpisodeNumber = episodeNumber;
+                savedProgress = progress;
                 return Task.CompletedTask;
             }
         };
 
-        var service = new MarkEpisodeWatchedService(provider);
+        var service = new MarkEpisodeWatchedService(repository);
 
         await service.MarkEpisodeWatchedAsync("Andor", 2, 5);
 
-        Assert.Equal("Andor", capturedShowTitle);
-        Assert.Equal(2, capturedSeasonNumber);
-        Assert.Equal(5, capturedEpisodeNumber);
+        Assert.NotNull(savedProgress);
+        Assert.Equal("Andor", savedProgress!.ShowTitle);
+        Assert.Equal(2, savedProgress.LastWatchedSeason);
+        Assert.Equal(5, savedProgress.LastWatchedEpisode);
+    }
+
+    [Fact]
+    public async Task MarkEpisodeWatchedAsync_Trims_Show_Title()
+    {
+        WatchProgress? savedProgress = null;
+
+        var repository = new TestWatchProgressRepository
+        {
+            SaveAsyncHandler = (progress, _) =>
+            {
+                savedProgress = progress;
+                return Task.CompletedTask;
+            }
+        };
+
+        var service = new MarkEpisodeWatchedService(repository);
+
+        await service.MarkEpisodeWatchedAsync("  Andor  ", 2, 5);
+
+        Assert.NotNull(savedProgress);
+        Assert.Equal("Andor", savedProgress!.ShowTitle);
     }
 
     [Theory]
@@ -36,8 +57,8 @@ public sealed class MarkEpisodeWatchedServiceTests
     [InlineData(" ")]
     public async Task MarkEpisodeWatchedAsync_Rejects_Blank_Show_Name(string showTitle)
     {
-        var provider = new TestWatchTrackingProvider();
-        var service = new MarkEpisodeWatchedService(provider);
+        var repository = new TestWatchProgressRepository();
+        var service = new MarkEpisodeWatchedService(repository);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.MarkEpisodeWatchedAsync(showTitle, 2, 5));
@@ -48,8 +69,8 @@ public sealed class MarkEpisodeWatchedServiceTests
     [InlineData(-1)]
     public async Task MarkEpisodeWatchedAsync_Rejects_Invalid_Season(int seasonNumber)
     {
-        var provider = new TestWatchTrackingProvider();
-        var service = new MarkEpisodeWatchedService(provider);
+        var repository = new TestWatchProgressRepository();
+        var service = new MarkEpisodeWatchedService(repository);
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             service.MarkEpisodeWatchedAsync("Andor", seasonNumber, 5));
@@ -60,8 +81,8 @@ public sealed class MarkEpisodeWatchedServiceTests
     [InlineData(-1)]
     public async Task MarkEpisodeWatchedAsync_Rejects_Invalid_Episode(int episodeNumber)
     {
-        var provider = new TestWatchTrackingProvider();
-        var service = new MarkEpisodeWatchedService(provider);
+        var repository = new TestWatchProgressRepository();
+        var service = new MarkEpisodeWatchedService(repository);
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             service.MarkEpisodeWatchedAsync("Andor", 2, episodeNumber));

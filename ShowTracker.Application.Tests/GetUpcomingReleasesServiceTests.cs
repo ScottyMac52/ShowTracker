@@ -1,4 +1,5 @@
-﻿using ShowTracker.Domain.Models;
+﻿using ShowTracker.Application;
+using ShowTracker.Domain.Models;
 using ShowTracker.Testing;
 
 namespace ShowTracker.Application.Tests;
@@ -6,60 +7,118 @@ namespace ShowTracker.Application.Tests;
 public sealed class GetUpcomingReleasesServiceTests
 {
     [Fact]
-    public async Task GetUpcomingReleasesAsync_Returns_Releases_From_Provider()
+    public async Task GetUpcomingReleasesAsync_Returns_Releases_For_Tracked_Titles()
     {
-        var releases = CreateDefaultUpcomingReleases();
+        var repository = new TestTrackedTitleRepository
+        {
+            GetAllAsyncHandler = _ =>
+                Task.FromResult<IReadOnlyList<TrackedTitle>>(
+                [
+                    new(
+                        ProviderId: "trakt:show:12345",
+                        Title: "Andor",
+                        Type: TrackedTitleType.Show,
+                        Platform: "Disney Plus")
+                ])
+        };
 
         var provider = new TestTitleTrackingProvider
         {
             GetUpcomingReleasesAsyncHandler = _ =>
-                Task.FromResult<IReadOnlyList<UpcomingRelease>>(releases)
+                Task.FromResult<IReadOnlyList<UpcomingRelease>>(
+                [
+                    new(
+                        ProviderId: "trakt:show:12345",
+                        Title: "Andor",
+                        Type: TrackedTitleType.Show,
+                        ReleaseDate: new DateOnly(2026, 7, 10),
+                        SeasonNumber: 2,
+                        EpisodeNumber: 1,
+                        EpisodeTitle: "Episode One",
+                        Platform: "Disney Plus"),
+
+                    new(
+                        ProviderId: "trakt:show:99999",
+                        Title: "Unknown Show",
+                        Type: TrackedTitleType.Show,
+                        ReleaseDate: new DateOnly(2026, 7, 12),
+                        SeasonNumber: 1,
+                        EpisodeNumber: 1)
+                ])
         };
 
-        var service = new GetUpcomingReleasesService(provider);
+        var service = new GetUpcomingReleasesService(provider, repository);
 
         var results = await service.GetUpcomingReleasesAsync();
 
-        Assert.Equal(2, results.Count);
-        Assert.Contains(results, r => r.Title == "Andor" && r.SeasonNumber == 2);
-        Assert.Contains(results, r => r.Title == "Dune Part Three");
+        var result = Assert.Single(results);
+        Assert.Equal("Andor", result.Title);
+        Assert.Equal("trakt:show:12345", result.ProviderId);
     }
 
     [Fact]
-    public async Task GetUpcomingReleasesAsync_Returns_Empty_List_When_Provider_Has_None()
+    public async Task GetUpcomingReleasesAsync_Returns_Empty_List_When_No_Titles_Are_Tracked()
     {
+        var repository = new TestTrackedTitleRepository
+        {
+            GetAllAsyncHandler = _ =>
+                Task.FromResult<IReadOnlyList<TrackedTitle>>([])
+        };
+
+        var providerCalled = false;
+
         var provider = new TestTitleTrackingProvider
         {
             GetUpcomingReleasesAsyncHandler = _ =>
-                Task.FromResult<IReadOnlyList<UpcomingRelease>>([])
+            {
+                providerCalled = true;
+                return Task.FromResult<IReadOnlyList<UpcomingRelease>>([]);
+            }
         };
 
-        var service = new GetUpcomingReleasesService(provider);
+        var service = new GetUpcomingReleasesService(provider, repository);
 
         var results = await service.GetUpcomingReleasesAsync();
 
         Assert.Empty(results);
+        Assert.False(providerCalled);
     }
 
-    private static IReadOnlyList<UpcomingRelease> CreateDefaultUpcomingReleases()
+    [Fact]
+    public async Task GetUpcomingReleasesAsync_Returns_Empty_List_When_Provider_Has_No_Matching_Releases()
     {
-        return
-        [
-            new(
-                ProviderId: "release-1",
-                Title: "Andor",
-                Type: TrackedTitleType.Show,
-                ReleaseDate: new DateOnly(2026, 7, 10),
-                SeasonNumber: 2,
-                EpisodeNumber: 1,
-                EpisodeTitle: "Episode One",
-                Platform: "Disney Plus"),
+        var repository = new TestTrackedTitleRepository
+        {
+            GetAllAsyncHandler = _ =>
+                Task.FromResult<IReadOnlyList<TrackedTitle>>(
+                [
+                    new(
+                        ProviderId: "trakt:show:12345",
+                        Title: "Andor",
+                        Type: TrackedTitleType.Show,
+                        Platform: "Disney Plus")
+                ])
+        };
 
-            new(
-                ProviderId: "release-2",
-                Title: "Dune Part Three",
-                Type: TrackedTitleType.Movie,
-                ReleaseDate: new DateOnly(2026, 12, 18))
-        ];
+        var provider = new TestTitleTrackingProvider
+        {
+            GetUpcomingReleasesAsyncHandler = _ =>
+                Task.FromResult<IReadOnlyList<UpcomingRelease>>(
+                [
+                    new(
+                        ProviderId: "trakt:show:99999",
+                        Title: "Unknown Show",
+                        Type: TrackedTitleType.Show,
+                        ReleaseDate: new DateOnly(2026, 7, 12),
+                        SeasonNumber: 1,
+                        EpisodeNumber: 1)
+                ])
+        };
+
+        var service = new GetUpcomingReleasesService(provider, repository);
+
+        var results = await service.GetUpcomingReleasesAsync();
+
+        Assert.Empty(results);
     }
 }

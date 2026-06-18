@@ -4,24 +4,22 @@ using ShowTracker.Domain.Services.Interfaces;
 namespace ShowTracker.Application;
 
 /// <summary>
-/// Service for retrieving the list of tracked titles for the user. It uses an <see cref="ITitleTrackingProvider"/> to access the title tracking data and retrieve the list of titles that the user is currently tracking.
+/// Service for retrieving the list of tracked titles for the user. It uses an <see cref="ITrackedTitleRepository"/> to access the stored tracked titles and retrieve the list of titles that the user is currently tracking. The service provides a method to get all tracked titles, which returns a read-only list of <see cref="TrackedTitle"/> objects representing the shows and movies that the user is tracking.
 /// </summary>
 /// <remarks>
 /// Constructor for the GetTrackedTitlesService class, which initializes the service with a specified title tracking provider. The provider is used to retrieve title tracking data for shows and retrieve the list of titles that the user is currently tracking.
 /// </remarks>
-/// <param name="titleTrackingProvider"></param>
-/// <exception cref="ArgumentNullException"><see cref="ITitleTrackingProvider"/> is required</exception>
-public sealed class GetTrackedTitlesService(ITitleTrackingProvider titleTrackingProvider)
+/// <param name="trackedTitleRepository"></param>
+/// <exception cref="ArgumentNullException"><see cref="ITrackedTitleRepository"/> is required</exception>
+public sealed class GetTrackedTitlesService(ITrackedTitleRepository trackedTitleRepository)
 {
-    /// <summary>
-    /// Tracking provider used to retrieve title tracking data for shows. This provider is responsible for accessing the underlying data source and providing the necessary information to retrieve the list of tracked titles for the user.
-    /// </summary>
-    private readonly ITitleTrackingProvider _titleTrackingProvider = titleTrackingProvider
-            ?? throw new ArgumentNullException(nameof(titleTrackingProvider));
+
+    private readonly ITrackedTitleRepository _trackedTitleRepository = trackedTitleRepository
+            ?? throw new ArgumentNullException(nameof(trackedTitleRepository));
 
     public Task<IReadOnlyList<TrackedTitle>> GetTrackedTitlesAsync(
-        CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default)
     {
-        return _titleTrackingProvider.GetTrackedTitlesAsync(cancellationToken);
+        return _trackedTitleRepository.GetAllAsync(cancellationToken);
     }
 }
