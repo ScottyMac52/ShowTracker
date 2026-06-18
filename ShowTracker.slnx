@@ -1,6 +1,8 @@
 <Solution>
   <Project Path="ShowTracker.Application.Tests/ShowTracker.Application.Tests.csproj" />
   <Project Path="ShowTracker.Application/ShowTracker.Application.csproj" />
+  <Project Path="ShowTracker.Console.Tests/ShowTracker.Console.Tests.csproj" />
+  <Project Path="ShowTracker.Console/ShowTracker.Console.csproj" />
   <Project Path="ShowTracker.Domain.Tests/ShowTracker.Domain.Tests.csproj" />
   <Project Path="ShowTracker.Domain/ShowTracker.Domain.csproj" />
   <Project Path="ShowTracker.Integration.Tests/ShowTracker.Integration.Tests.csproj" />
