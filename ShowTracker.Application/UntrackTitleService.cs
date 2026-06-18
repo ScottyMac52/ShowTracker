@@ -3,37 +3,39 @@
 namespace ShowTracker.Application;
 
 /// <summary>
-/// Service for untracking a title. It uses an <see cref="ITitleTrackingProvider"/> to access the title tracking data and remove a title from the list of tracked titles for the user. The service validates the input title and checks if the title is being tracked, and if so, it removes the title from the tracking list.
+/// Service for untracking a title. It uses an <see cref="ITrackedTitleRepository"/> to access the tracked titles data and remove a title from the list of tracked titles for the user. The service validates the input provider ID and checks if the title is being tracked, and if so, it removes the title from the tracking list. If the provider ID is invalid or if the title is not being tracked, it throws an appropriate exception.
 /// </summary>
-/// <remarks>
-/// Constructor for the UntrackTitleService class, which initializes the service with a specified title tracking provider. The provider is used to access the title tracking data and remove a title from the list of tracked titles for the user.
-/// </remarks>
-/// <param name="titleTrackingProvider"></param>
-/// <exception cref="ArgumentNullException"><see cref="ITitleTrackingProvider"/> is required</exception>
-public sealed class UntrackTitleService(ITitleTrackingProvider titleTrackingProvider)
+public sealed class UntrackTitleService
 {
-    /// <summary>
-    /// Title Tracking Provider used to access the title tracking data and remove a title from the list of tracked titles for the user. This provider is responsible for accessing the underlying data source and providing the necessary functionality to untrack a title.
-    /// </summary>
-    private readonly ITitleTrackingProvider _titleTrackingProvider = titleTrackingProvider
-            ?? throw new ArgumentNullException(nameof(titleTrackingProvider));
+    private readonly ITrackedTitleRepository _trackedTitleRepository;
 
     /// <summary>
-    /// Untracks a title for the user. This method validates the input title and checks if the title is being tracked, and if so, it removes the title from the tracking list. If the title is null or whitespace, an <see cref="ArgumentException"/> is thrown.
+    /// Constructor for the UntrackTitleService class, which initializes the service with a specified tracked title repository. The repository is used to access the tracked titles data and remove a title from the list of tracked titles for the user.
     /// </summary>
-    /// <param name="title"></param>
+    /// <param name="trackedTitleRepository"></param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public UntrackTitleService(ITrackedTitleRepository trackedTitleRepository)
+    {
+        _trackedTitleRepository = trackedTitleRepository
+            ?? throw new ArgumentNullException(nameof(trackedTitleRepository));
+    }
+
+    /// <summary>
+    /// Untracks a title for the user. This method validates the input provider ID and checks if the title is being tracked, and if so, it removes the title from the tracking list. The method throws an exception if the input provider ID is invalid or if the title is not being tracked.
+    /// </summary>
+    /// <param name="providerId"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="ArgumentException">Title is required</exception>
+    /// <exception cref="ArgumentException"></exception>
     public Task UntrackAsync(
-        string title,
+        string providerId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(title))
-            throw new ArgumentException("Title is required.", nameof(title));
+        if (string.IsNullOrWhiteSpace(providerId))
+            throw new ArgumentException("Provider id is required.", nameof(providerId));
 
-        return _titleTrackingProvider.UntrackAsync(
-            title.Trim(),
+        return _trackedTitleRepository.RemoveAsync(
+            providerId.Trim(),
             cancellationToken);
     }
 }

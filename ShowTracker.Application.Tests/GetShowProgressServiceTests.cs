@@ -6,45 +6,41 @@ namespace ShowTracker.Application.Tests;
 public sealed class GetShowProgressServiceTests
 {
     [Fact]
-    public async Task GetShowProgressAsync_Returns_Progress_From_Provider()
+    public async Task GetShowProgressAsync_Returns_Progress_From_Repository()
     {
-        var provider = new TestWatchTrackingProvider
+        var expected = new WatchProgress(
+            ProviderId: "trakt:show:12345",
+            ShowTitle: "Andor",
+            LastWatchedSeason: 2,
+            LastWatchedEpisode: 5,
+            LastWatchedEpisodeTitle: "Messenger",
+            NextSeason: 2,
+            NextEpisode: 6,
+            NextEpisodeTitle: "What a Festive Evening");
+
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (showTitle, _) =>
-                Task.FromResult<WatchProgress?>(
-                    new WatchProgress(
-                        ProviderId: "fake:show:andor",
-                        ShowTitle: "Andor",
-                        LastWatchedSeason: 2,
-                        LastWatchedEpisode: 5,
-                        LastWatchedEpisodeTitle: "Messenger",
-                        NextSeason: 2,
-                        NextEpisode: 6,
-                        NextEpisodeTitle: "What a Festive Evening"))
+            GetAsyncHandler = (_, _) =>
+                Task.FromResult<WatchProgress?>(expected)
         };
 
-        var service = new GetShowProgressService(provider);
+        var service = new GetShowProgressService(repository);
 
         var progress = await service.GetShowProgressAsync("Andor");
 
-        Assert.NotNull(progress);
-        Assert.Equal("Andor", progress!.ShowTitle);
-        Assert.Equal(2, progress.LastWatchedSeason);
-        Assert.Equal(5, progress.LastWatchedEpisode);
-        Assert.Equal(2, progress.NextSeason);
-        Assert.Equal(6, progress.NextEpisode);
+        Assert.Equal(expected, progress);
     }
 
     [Fact]
     public async Task GetShowProgressAsync_Returns_Null_When_Show_Is_Unknown()
     {
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (_, _) =>
+            GetAsyncHandler = (_, _) =>
                 Task.FromResult<WatchProgress?>(null)
         };
 
-        var service = new GetShowProgressService(provider);
+        var service = new GetShowProgressService(repository);
 
         var progress = await service.GetShowProgressAsync("Unknown Show");
 
@@ -56,8 +52,8 @@ public sealed class GetShowProgressServiceTests
     [InlineData(" ")]
     public async Task GetShowProgressAsync_Rejects_Blank_Show_Title(string showTitle)
     {
-        var provider = new TestWatchTrackingProvider();
-        var service = new GetShowProgressService(provider);
+        var repository = new TestWatchProgressRepository();
+        var service = new GetShowProgressService(repository);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.GetShowProgressAsync(showTitle));
@@ -68,16 +64,16 @@ public sealed class GetShowProgressServiceTests
     {
         string? requestedShowTitle = null;
 
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (showTitle, _) =>
+            GetAsyncHandler = (showTitle, _) =>
             {
                 requestedShowTitle = showTitle;
                 return Task.FromResult<WatchProgress?>(null);
             }
         };
 
-        var service = new GetShowProgressService(provider);
+        var service = new GetShowProgressService(repository);
 
         await service.GetShowProgressAsync("  Andor  ");
 

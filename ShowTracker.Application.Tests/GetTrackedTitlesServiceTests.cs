@@ -8,37 +8,48 @@ public sealed class GetTrackedTitlesServiceTests
     [Fact]
     public async Task GetTrackedTitlesAsync_Returns_All_Tracked_Titles()
     {
-        var provider = new TestTitleTrackingProvider
+        IReadOnlyList<TrackedTitle> trackedTitles =
+        [
+            new(
+                ProviderId: "trakt:show:12345",
+                Title: "Andor",
+                Type: TrackedTitleType.Show,
+                Platform: "Disney Plus"),
+
+            new(
+                ProviderId: "trakt:movie:654321",
+                Title: "Dune: Part Two",
+                Type: TrackedTitleType.Movie,
+                Platform: "Max")
+        ];
+
+        var repository = new TestTrackedTitleRepository
         {
-            GetTrackedTitlesAsyncHandler = _ =>
-            {
-                IReadOnlyList<TrackedTitle> titles =
-                [
-                    new(
-                        ProviderId: "show-1",
-                        Title: "Andor",
-                        Type: TrackedTitleType.Show),
-
-                    new(
-                        ProviderId: "movie-1",
-                        Title: "Dune Part Two",
-                        Type: TrackedTitleType.Movie)
-                ];
-
-                return Task.FromResult(titles);
-            }
+            GetAllAsyncHandler = _ =>
+                Task.FromResult(trackedTitles)
         };
 
-        var service = new GetTrackedTitlesService(provider);
+        var service = new GetTrackedTitlesService(repository);
 
         var results = await service.GetTrackedTitlesAsync();
 
         Assert.Equal(2, results.Count);
+        Assert.Equal(trackedTitles, results);
+    }
 
-        Assert.Contains(results,
-            t => t.Title == "Andor");
+    [Fact]
+    public async Task GetTrackedTitlesAsync_Returns_Empty_List_When_No_Titles_Are_Tracked()
+    {
+        var repository = new TestTrackedTitleRepository
+        {
+            GetAllAsyncHandler = _ =>
+                Task.FromResult<IReadOnlyList<TrackedTitle>>([])
+        };
 
-        Assert.Contains(results,
-            t => t.Title == "Dune Part Two");
+        var service = new GetTrackedTitlesService(repository);
+
+        var results = await service.GetTrackedTitlesAsync();
+
+        Assert.Empty(results);
     }
 }

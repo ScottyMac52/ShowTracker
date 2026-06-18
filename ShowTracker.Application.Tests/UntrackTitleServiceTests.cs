@@ -5,33 +5,35 @@ namespace ShowTracker.Application.Tests;
 public sealed class UntrackTitleServiceTests
 {
     [Fact]
-    public async Task UntrackAsync_Untracks_Title_Through_Provider()
+    public async Task UntrackAsync_Removes_Title_From_Repository()
     {
-        string? untrackedTitle = null;
+        string? removedProviderId = null;
 
-        var provider = new TestTitleTrackingProvider
+        var repository = new TestTrackedTitleRepository
         {
-            UntrackAsyncHandler = (title, _) =>
+            RemoveAsyncHandler = (providerId, _) =>
             {
-                untrackedTitle = title;
+                removedProviderId = providerId;
                 return Task.CompletedTask;
             }
         };
 
-        var service = new UntrackTitleService(provider);
+        var service = new UntrackTitleService(repository);
 
-        await service.UntrackAsync("Andor");
+        await service.UntrackAsync("trakt:show:12345");
 
-        Assert.Equal("Andor", untrackedTitle);
+        Assert.Equal("trakt:show:12345", removedProviderId);
     }
 
-    [Fact]
-    public async Task UntrackAsync_Rejects_Blank_Title()
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task UntrackAsync_Rejects_Blank_Provider_Id(string providerId)
     {
-        var provider = new TestTitleTrackingProvider();
-        var service = new UntrackTitleService(provider);
+        var repository = new TestTrackedTitleRepository();
+        var service = new UntrackTitleService(repository);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.UntrackAsync("   "));
+            service.UntrackAsync(providerId));
     }
 }

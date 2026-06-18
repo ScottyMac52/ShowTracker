@@ -1,4 +1,5 @@
-﻿using ShowTracker.Domain.Models;
+﻿using ShowTracker.Application;
+using ShowTracker.Domain.Models;
 using ShowTracker.Testing;
 
 namespace ShowTracker.Application.Tests;
@@ -6,24 +7,25 @@ namespace ShowTracker.Application.Tests;
 public sealed class GetNextEpisodeToWatchServiceTests
 {
     [Fact]
-    public async Task GetNextEpisodeToWatchAsync_Returns_Next_Episode_From_Progress()
+    public async Task GetNextEpisodeToWatchAsync_Returns_Next_Episode_From_Repository()
     {
-        var provider = new TestWatchTrackingProvider
+        var progress = new WatchProgress(
+            ProviderId: "trakt:show:12345",
+            ShowTitle: "Andor",
+            LastWatchedSeason: 2,
+            LastWatchedEpisode: 5,
+            LastWatchedEpisodeTitle: "Messenger",
+            NextSeason: 2,
+            NextEpisode: 6,
+            NextEpisodeTitle: "What a Festive Evening");
+
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (_, _) =>
-                Task.FromResult<WatchProgress?>(
-                    new WatchProgress(
-                        ProviderId: "fake:show:andor",
-                        ShowTitle: "Andor",
-                        LastWatchedSeason: 2,
-                        LastWatchedEpisode: 5,
-                        LastWatchedEpisodeTitle: "Messenger",
-                        NextSeason: 2,
-                        NextEpisode: 6,
-                        NextEpisodeTitle: "What a Festive Evening"))
+            GetAsyncHandler = (_, _) =>
+                Task.FromResult<WatchProgress?>(progress)
         };
 
-        var service = new GetNextEpisodeToWatchService(provider);
+        var service = new GetNextEpisodeToWatchService(repository);
 
         var result = await service.GetNextEpisodeToWatchAsync("Andor");
 
@@ -35,15 +37,15 @@ public sealed class GetNextEpisodeToWatchServiceTests
     }
 
     [Fact]
-    public async Task GetNextEpisodeToWatchAsync_Returns_Null_When_Show_Is_Unknown()
+    public async Task GetNextEpisodeToWatchAsync_Returns_Null_When_No_Progress_Exists()
     {
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (_, _) =>
+            GetAsyncHandler = (_, _) =>
                 Task.FromResult<WatchProgress?>(null)
         };
 
-        var service = new GetNextEpisodeToWatchService(provider);
+        var service = new GetNextEpisodeToWatchService(repository);
 
         var result = await service.GetNextEpisodeToWatchAsync("Unknown Show");
 
@@ -53,12 +55,12 @@ public sealed class GetNextEpisodeToWatchServiceTests
     [Fact]
     public async Task GetNextEpisodeToWatchAsync_Returns_Null_When_Progress_Has_No_Next_Episode()
     {
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (_, _) =>
+            GetAsyncHandler = (_, _) =>
                 Task.FromResult<WatchProgress?>(
                     new WatchProgress(
-                        ProviderId: "fake:show:andor",
+                        ProviderId: "trakt:show:12345",
                         ShowTitle: "Andor",
                         LastWatchedSeason: 2,
                         LastWatchedEpisode: 12,
@@ -68,7 +70,7 @@ public sealed class GetNextEpisodeToWatchServiceTests
                         NextEpisodeTitle: null))
         };
 
-        var service = new GetNextEpisodeToWatchService(provider);
+        var service = new GetNextEpisodeToWatchService(repository);
 
         var result = await service.GetNextEpisodeToWatchAsync("Andor");
 
@@ -80,8 +82,8 @@ public sealed class GetNextEpisodeToWatchServiceTests
     [InlineData(" ")]
     public async Task GetNextEpisodeToWatchAsync_Rejects_Blank_Show_Title(string showTitle)
     {
-        var provider = new TestWatchTrackingProvider();
-        var service = new GetNextEpisodeToWatchService(provider);
+        var repository = new TestWatchProgressRepository();
+        var service = new GetNextEpisodeToWatchService(repository);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.GetNextEpisodeToWatchAsync(showTitle));
@@ -92,16 +94,16 @@ public sealed class GetNextEpisodeToWatchServiceTests
     {
         string? requestedShowTitle = null;
 
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            GetShowProgressAsyncHandler = (showTitle, _) =>
+            GetAsyncHandler = (showTitle, _) =>
             {
                 requestedShowTitle = showTitle;
                 return Task.FromResult<WatchProgress?>(null);
             }
         };
 
-        var service = new GetNextEpisodeToWatchService(provider);
+        var service = new GetNextEpisodeToWatchService(repository);
 
         await service.GetNextEpisodeToWatchAsync("  Andor  ");
 

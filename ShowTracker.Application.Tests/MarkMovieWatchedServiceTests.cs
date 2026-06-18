@@ -1,28 +1,55 @@
-﻿using ShowTracker.Testing;
+﻿using ShowTracker.Application;
+using ShowTracker.Domain.Models;
+using ShowTracker.Testing;
 
 namespace ShowTracker.Application.Tests;
 
 public sealed class MarkMovieWatchedServiceTests
 {
     [Fact]
-    public async Task MarkMovieWatchedAsync_Calls_Provider()
+    public async Task MarkMovieWatchedAsync_Saves_Progress()
     {
-        string? capturedMovieTitle = null;
+        WatchProgress? savedProgress = null;
 
-        var provider = new TestWatchTrackingProvider
+        var repository = new TestWatchProgressRepository
         {
-            MarkMovieWatchedAsyncHandler = (movieTitle, _) =>
+            SaveAsyncHandler = (progress, _) =>
             {
-                capturedMovieTitle = movieTitle;
+                savedProgress = progress;
                 return Task.CompletedTask;
             }
         };
 
-        var service = new MarkMovieWatchedService(provider);
+        var service = new MarkMovieWatchedService(repository);
 
-        await service.MarkMovieWatchedAsync("Dune Part Two");
+        await service.MarkMovieWatchedAsync("Dune: Part Two");
 
-        Assert.Equal("Dune Part Two", capturedMovieTitle);
+        Assert.NotNull(savedProgress);
+        Assert.Equal("Dune: Part Two", savedProgress!.ShowTitle);
+        Assert.Null(savedProgress.LastWatchedSeason);
+        Assert.Null(savedProgress.LastWatchedEpisode);
+    }
+
+    [Fact]
+    public async Task MarkMovieWatchedAsync_Trims_Movie_Title()
+    {
+        WatchProgress? savedProgress = null;
+
+        var repository = new TestWatchProgressRepository
+        {
+            SaveAsyncHandler = (progress, _) =>
+            {
+                savedProgress = progress;
+                return Task.CompletedTask;
+            }
+        };
+
+        var service = new MarkMovieWatchedService(repository);
+
+        await service.MarkMovieWatchedAsync("  Dune: Part Two  ");
+
+        Assert.NotNull(savedProgress);
+        Assert.Equal("Dune: Part Two", savedProgress!.ShowTitle);
     }
 
     [Theory]
@@ -30,31 +57,10 @@ public sealed class MarkMovieWatchedServiceTests
     [InlineData(" ")]
     public async Task MarkMovieWatchedAsync_Rejects_Blank_Title(string movieTitle)
     {
-        var provider = new TestWatchTrackingProvider();
-        var service = new MarkMovieWatchedService(provider);
+        var repository = new TestWatchProgressRepository();
+        var service = new MarkMovieWatchedService(repository);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.MarkMovieWatchedAsync(movieTitle));
-    }
-
-    [Fact]
-    public async Task MarkMovieWatchedAsync_Trims_Title()
-    {
-        string? capturedMovieTitle = null;
-
-        var provider = new TestWatchTrackingProvider
-        {
-            MarkMovieWatchedAsyncHandler = (movieTitle, _) =>
-            {
-                capturedMovieTitle = movieTitle;
-                return Task.CompletedTask;
-            }
-        };
-
-        var service = new MarkMovieWatchedService(provider);
-
-        await service.MarkMovieWatchedAsync("  Dune Part Two  ");
-
-        Assert.Equal("Dune Part Two", capturedMovieTitle);
     }
 }
