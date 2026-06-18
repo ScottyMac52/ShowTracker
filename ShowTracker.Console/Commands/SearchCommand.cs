@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using ShowTracker.Application.Services.Interfaces;
+using ShowTracker.Console.Commands.Interfaces;
 using ShowTracker.Domain.Models;
 
 namespace ShowTracker.Console.Commands;

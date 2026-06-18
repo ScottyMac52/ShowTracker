@@ -1,8 +1,8 @@
 ﻿namespace ShowTracker.Console.Commands.Interfaces;
 
-public interface IConsoleCommand
+public interface IConsoleApplication
 {
-    Task<string> ExecuteAsync(
+    Task<int> RunAsync(
         string[] args,
         CancellationToken cancellationToken = default);
 }

@@ -1,17 +1,13 @@
 ﻿namespace ShowTracker.Providers.Trakt;
 
-/// <summary>
-/// Stores options for the Trakt provider.
-/// </summary>
 public sealed class TraktOptions
 {
-    /// <summary>
-    /// Base address for the Trakt API. Defaults to "https://api.trakt.tv/".
-    /// </summary>
-    public Uri BaseAddress { get; set; } = new("https://api.trakt.tv/");
+    public string ClientId { get; set; } = "bf928c789cc6ccb47e80bbbf8f3575fd9e86a9ba946e13b34ca1a2c187c91e32";
 
-    /// <summary>
-    /// ClientId for authenticating with the Trakt API. Must be set to a valid client ID for the provider to work.  
-    /// </summary>
-    public string ClientId { get; set; } = "";
+    public string ClientSecret { get; set; } = "4fb30d61ce1e67c6c02a98a5a2b1f0b7f272e672b4a3973fbe93e79f2225433a";
+
+    public string UserAgent { get; set; } = "ShowTracker/0.1";
+
+    public Uri BaseAddress { get; set; } =
+        new("https://api.trakt.tv/");
 }

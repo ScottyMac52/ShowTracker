@@ -10,9 +10,7 @@ public sealed class TraktTitleSearchClientTests
     [InlineData(" ")]
     public async Task SearchTitlesAsync_Rejects_Blank_Query(string query)
     {
-        var client = CreateClient("""
-            []
-            """);
+        var client = CreateClient([]);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             client.SearchTitlesAsync(query));
@@ -41,11 +39,11 @@ public sealed class TraktTitleSearchClientTests
     [Fact]
     public async Task SearchTitlesAsync_Sends_Required_Trakt_Headers()
     {
-        HttpRequestMessage? capturedRequest = null;
+        var capturedRequests = new List<HttpRequestMessage>();
 
         var httpClient = new HttpClient(new TestHttpMessageHandler(request =>
         {
-            capturedRequest = request;
+            capturedRequests.Add(request);
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -62,25 +60,29 @@ public sealed class TraktTitleSearchClientTests
 
         await client.SearchTitlesAsync("Andor");
 
-        Assert.NotNull(capturedRequest);
-        Assert.True(capturedRequest!.Headers.TryGetValues("trakt-api-version", out var versionValues));
-        Assert.Equal("2", Assert.Single(versionValues));
+        Assert.Equal(2, capturedRequests.Count);
 
-        Assert.True(capturedRequest.Headers.TryGetValues("trakt-api-key", out var apiKeyValues));
-        Assert.Equal("test-client-id", Assert.Single(apiKeyValues));
+        foreach (var request in capturedRequests)
+        {
+            Assert.True(request.Headers.TryGetValues("trakt-api-version", out var versionValues));
+            Assert.Equal("2", Assert.Single(versionValues));
 
-        Assert.True(capturedRequest.Headers.Accept.Any(h =>
-            string.Equals(h.MediaType, "application/json", StringComparison.OrdinalIgnoreCase)));
+            Assert.True(request.Headers.TryGetValues("trakt-api-key", out var apiKeyValues));
+            Assert.Equal("test-client-id", Assert.Single(apiKeyValues));
+
+            Assert.True(request.Headers.TryGetValues("Accept", out var acceptValues));
+            Assert.Contains("application/json", acceptValues);
+        }
     }
 
     [Fact]
-    public async Task SearchTitlesAsync_Uses_Search_Endpoint_With_Escaped_Query()
+    public async Task SearchTitlesAsync_Uses_Show_And_Movie_Search_Endpoints_With_Escaped_Query()
     {
-        HttpRequestMessage? capturedRequest = null;
+        var capturedRequests = new List<HttpRequestMessage>();
 
         var httpClient = new HttpClient(new TestHttpMessageHandler(request =>
         {
-            capturedRequest = request;
+            capturedRequests.Add(request);
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -95,18 +97,31 @@ public sealed class TraktTitleSearchClientTests
                 ClientId = "test-client-id"
             });
 
-        await client.SearchTitlesAsync("Your Friends & Neighbors");
+        await client.SearchTitlesAsync("Your Friends and Neighbors");
 
-        Assert.NotNull(capturedRequest);
-        Assert.Equal(
-            "https://api.trakt.tv/search/movie,show?query=Your%20Friends%20%26%20Neighbors",
-            capturedRequest!.RequestUri!.AbsoluteUri);
+        Assert.Equal(2, capturedRequests.Count);
+
+        Assert.Contains(
+            capturedRequests,
+            request => string.Equals(
+                request.RequestUri!.AbsoluteUri,
+                "https://api.trakt.tv/search/show?query=Your%20Friends%20and%20Neighbors",
+                StringComparison.Ordinal));
+
+        Assert.Contains(
+            capturedRequests,
+            request => string.Equals(
+                request.RequestUri!.AbsoluteUri,
+                "https://api.trakt.tv/search/movie?query=Your%20Friends%20and%20Neighbors",
+                StringComparison.Ordinal));
     }
 
     [Fact]
     public async Task SearchTitlesAsync_Maps_Show_Result()
     {
-        var client = CreateClient("""
+        var client = CreateClient(
+        [
+            """
             [
               {
                 "type": "show",
@@ -124,7 +139,9 @@ public sealed class TraktTitleSearchClientTests
                 }
               }
             ]
-            """);
+            """,
+            "[]"
+        ]);
 
         var results = await client.SearchTitlesAsync("Andor");
 
@@ -139,7 +156,10 @@ public sealed class TraktTitleSearchClientTests
     [Fact]
     public async Task SearchTitlesAsync_Maps_Movie_Result()
     {
-        var client = CreateClient("""
+        var client = CreateClient(
+        [
+            "[]",
+            """
             [
               {
                 "type": "movie",
@@ -156,7 +176,8 @@ public sealed class TraktTitleSearchClientTests
                 }
               }
             ]
-            """);
+            """
+        ]);
 
         var results = await client.SearchTitlesAsync("Dune Part Two");
 
@@ -169,24 +190,79 @@ public sealed class TraktTitleSearchClientTests
     }
 
     [Fact]
+    public async Task SearchTitlesAsync_Returns_Combined_Show_And_Movie_Results()
+    {
+        var client = CreateClient(
+        [
+            """
+            [
+              {
+                "type": "show",
+                "show": {
+                  "title": "Andor",
+                  "year": 2022,
+                  "ids": {
+                    "trakt": 12345
+                  }
+                }
+              }
+            ]
+            """,
+            """
+            [
+              {
+                "type": "movie",
+                "movie": {
+                  "title": "Dune: Part Two",
+                  "year": 2024,
+                  "ids": {
+                    "trakt": 654321
+                  }
+                }
+              }
+            ]
+            """
+        ]);
+
+        var results = await client.SearchTitlesAsync("andor");
+
+        Assert.Equal(2, results.Count);
+        Assert.Contains(results, result => result.Type == TrackedTitleType.Show);
+        Assert.Contains(results, result => result.Type == TrackedTitleType.Movie);
+    }
+
+    [Fact]
     public async Task SearchTitlesAsync_Returns_Empty_List_When_Response_Is_Empty()
     {
-        var client = CreateClient("""
-            []
-            """);
+        var client = CreateClient(
+        [
+            "[]",
+            "[]"
+        ]);
 
         var results = await client.SearchTitlesAsync("Definitely Missing");
 
         Assert.Empty(results);
     }
 
-    private static TraktTitleSearchClient CreateClient(string responseJson)
+    private static TraktTitleSearchClient CreateClient(
+        IReadOnlyList<string> responseJson)
     {
+        var responseIndex = 0;
+
         var httpClient = new HttpClient(new TestHttpMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            var content = responseIndex < responseJson.Count
+                ? responseJson[responseIndex]
+                : "[]";
+
+            responseIndex++;
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(responseJson)
-            }));
+                Content = new StringContent(content)
+            };
+        }));
 
         return new TraktTitleSearchClient(
             httpClient,
@@ -200,7 +276,8 @@ public sealed class TraktTitleSearchClientTests
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
 
-        public TestHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
+        public TestHttpMessageHandler(
+            Func<HttpRequestMessage, HttpResponseMessage> handler)
         {
             _handler = handler;
         }

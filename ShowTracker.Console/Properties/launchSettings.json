@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ShowTracker.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "search andor"
+    }
+  }
+}

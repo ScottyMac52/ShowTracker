@@ -59,6 +59,7 @@ public sealed class CompositionRootTests
         services.AddShowTrackerTrakt(options =>
         {
             options.ClientId = "test-client-id";
+            options.UserAgent = "ShowTracker/0.1";
         });
 
         return services.BuildServiceProvider(

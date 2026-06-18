@@ -2,6 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ShowTracker.Application\ShowTracker.Application.csproj" />
+    <ProjectReference Include="..\ShowTracker.Persistence\ShowTracker.Persistence.csproj" />
+    <ProjectReference Include="..\ShowTracker.Providers.Trakt\ShowTracker.Providers.Trakt.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
   </ItemGroup>
 
   <PropertyGroup>
