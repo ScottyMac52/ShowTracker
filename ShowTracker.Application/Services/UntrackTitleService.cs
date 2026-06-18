@@ -1,11 +1,12 @@
-﻿using ShowTracker.Domain.Services.Interfaces;
+﻿using ShowTracker.Application.Services.Interfaces;
+using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application;
+namespace ShowTracker.Application.Services;
 
 /// <summary>
 /// Service for untracking a title. It uses an <see cref="ITrackedTitleRepository"/> to access the tracked titles data and remove a title from the list of tracked titles for the user. The service validates the input provider ID and checks if the title is being tracked, and if so, it removes the title from the tracking list. If the provider ID is invalid or if the title is not being tracked, it throws an appropriate exception.
 /// </summary>
-public sealed class UntrackTitleService
+public sealed class UntrackTitleService : IUntrackTitleService
 {
     private readonly ITrackedTitleRepository _trackedTitleRepository;
 

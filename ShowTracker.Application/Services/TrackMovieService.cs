@@ -1,12 +1,13 @@
-﻿using ShowTracker.Domain.Models;
+﻿using ShowTracker.Application.Services.Interfaces;
+using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application;
+namespace ShowTracker.Application.Services;
 
 /// <summary>
 /// Service for tracking a movie title. It uses an <see cref="ITitleTrackingProvider"/> to access the title tracking data and add a new movie title to the list of tracked titles for the user. The service validates the input movie title and platform, checks if the movie is already being tracked, and if not, it adds the movie to the tracking list and returns the tracked title information.
 /// </summary>
-public sealed class TrackMovieService
+public sealed class TrackMovieService : ITrackMovieService
 {
     /// <summary>
     /// Title Tracking Provider used to access the title tracking data and add a new movie title to the list of tracked titles for the user. This provider is responsible for accessing the underlying data source and providing the necessary functionality to track a movie title.

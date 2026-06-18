@@ -1,7 +1,8 @@
+using ShowTracker.Application.Services.Interfaces;
 using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application;
+namespace ShowTracker.Application.Services;
 
 /// <summary>
 /// Service for tracking a show title. It uses an <see cref="ITitleTrackingProvider"/> to access the title tracking data and add a new show title to the list of tracked titles for the user. The service validates the input show title and platform, checks if the show is already being tracked, and if not, it adds the show to the tracking list and returns the tracked title information.
@@ -15,7 +16,7 @@ namespace ShowTracker.Application;
 /// <exception cref="ArgumentNullException"><see cref="ITitleTrackingProvider"/> and <see cref="ITrackedTitleRepository"/> are required</exception>
 public sealed class TrackShowService(
     ITitleTrackingProvider titleTrackingProvider,
-    ITrackedTitleRepository trackedTitleRepository)
+    ITrackedTitleRepository trackedTitleRepository) : ITrackShowService
 {
     /// <summary>
     /// Title Tracking Provider used to access the title tracking data and add a new show title to the list of tracked titles for the user. This provider is responsible for accessing the underlying data source and providing the necessary functionality to track a show title.

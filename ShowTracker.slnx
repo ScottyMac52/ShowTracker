@@ -3,6 +3,7 @@
   <Project Path="ShowTracker.Application/ShowTracker.Application.csproj" />
   <Project Path="ShowTracker.Domain.Tests/ShowTracker.Domain.Tests.csproj" />
   <Project Path="ShowTracker.Domain/ShowTracker.Domain.csproj" />
+  <Project Path="ShowTracker.Integration.Tests/ShowTracker.Integration.Tests.csproj" />
   <Project Path="ShowTracker.Persistence.Tests/ShowTracker.Persistence.Tests.csproj" />
   <Project Path="ShowTracker.Persistence/ShowTracker.Persistence.csproj" />
   <Project Path="ShowTracker.Providers.Trakt.Tests/ShowTracker.Providers.Trakt.Tests.csproj" />

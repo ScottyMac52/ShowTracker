@@ -1,9 +1,10 @@
-﻿using ShowTracker.Domain.Models;
+﻿using ShowTracker.Application.Services.Interfaces;
+using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application;
+namespace ShowTracker.Application.Services;
 
-public sealed class GetShowProgressService
+public sealed class GetShowProgressService : IGetShowProgressService
 {
     private readonly IWatchProgressRepository _watchProgressRepository;
 

@@ -1,4 +1,5 @@
-﻿using ShowTracker.Testing;
+﻿using ShowTracker.Application.Services;
+using ShowTracker.Testing;
 
 namespace ShowTracker.Application.Tests;
 

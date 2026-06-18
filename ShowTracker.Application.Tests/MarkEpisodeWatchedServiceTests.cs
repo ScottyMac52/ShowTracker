@@ -1,4 +1,4 @@
-﻿using ShowTracker.Application;
+﻿using ShowTracker.Application.Services;
 using ShowTracker.Domain.Models;
 using ShowTracker.Testing;
 

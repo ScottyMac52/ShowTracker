@@ -1,7 +1,8 @@
-﻿using ShowTracker.Domain.Models;
+﻿using ShowTracker.Application.Services.Interfaces;
+using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application;
+namespace ShowTracker.Application.Services;
 
 /// <summary>
 /// Service for retrieving the list of tracked titles for the user. It uses an <see cref="ITrackedTitleRepository"/> to access the stored tracked titles and retrieve the list of titles that the user is currently tracking. The service provides a method to get all tracked titles, which returns a read-only list of <see cref="TrackedTitle"/> objects representing the shows and movies that the user is tracking.
@@ -11,7 +12,7 @@ namespace ShowTracker.Application;
 /// </remarks>
 /// <param name="trackedTitleRepository"></param>
 /// <exception cref="ArgumentNullException"><see cref="ITrackedTitleRepository"/> is required</exception>
-public sealed class GetTrackedTitlesService(ITrackedTitleRepository trackedTitleRepository)
+public sealed class GetTrackedTitlesService(ITrackedTitleRepository trackedTitleRepository) : IGetTrackedTitlesService
 {
 
     private readonly ITrackedTitleRepository _trackedTitleRepository = trackedTitleRepository

@@ -1,14 +1,15 @@
-﻿using ShowTracker.Domain.Models;
+﻿using ShowTracker.Application.Services.Interfaces;
+using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application;
+namespace ShowTracker.Application.Services;
 
-public sealed class GetNextReleaseService
+public sealed class GetUpcomingReleasesService : IGetUpcomingReleasesService
 {
     private readonly ITitleTrackingProvider _titleTrackingProvider;
     private readonly ITrackedTitleRepository _trackedTitleRepository;
 
-    public GetNextReleaseService(
+    public GetUpcomingReleasesService(
         ITitleTrackingProvider titleTrackingProvider,
         ITrackedTitleRepository trackedTitleRepository)
     {
@@ -19,25 +20,23 @@ public sealed class GetNextReleaseService
             ?? throw new ArgumentNullException(nameof(trackedTitleRepository));
     }
 
-    public async Task<UpcomingRelease?> GetNextReleaseAsync(
-        string showTitle,
+    public async Task<IReadOnlyList<UpcomingRelease>> GetUpcomingReleasesAsync(
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(showTitle))
-            throw new ArgumentException("Show title is required.", nameof(showTitle));
-
-        var normalizedTitle = showTitle.Trim();
-
         var trackedTitles = await _trackedTitleRepository.GetAllAsync(cancellationToken);
 
-        var trackedTitle = trackedTitles.FirstOrDefault(t =>
-            string.Equals(t.Title, normalizedTitle, StringComparison.OrdinalIgnoreCase));
+        if (trackedTitles.Count == 0)
+            return [];
 
-        if (trackedTitle is null)
-            return null;
+        var trackedProviderIds = trackedTitles
+            .Select(t => t.ProviderId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        return await _titleTrackingProvider.GetNextReleaseAsync(
-            normalizedTitle,
+        var releases = await _titleTrackingProvider.GetUpcomingReleasesAsync(
             cancellationToken);
+
+        return releases
+            .Where(r => trackedProviderIds.Contains(r.ProviderId))
+            .ToArray();
     }
 }
