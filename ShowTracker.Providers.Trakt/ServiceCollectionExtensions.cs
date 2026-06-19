@@ -23,6 +23,12 @@ public static class ServiceCollectionExtensions
                 client.BaseAddress = options.BaseAddress;
             });
 
+        services.AddHttpClient<ITraktReleaseClient, TraktReleaseClient>(
+            client =>
+            {
+                client.BaseAddress = options.BaseAddress;
+            });
+
         services.AddSingleton<ITitleTrackingProvider, TraktTitleTrackingProvider>();
 
         return services;

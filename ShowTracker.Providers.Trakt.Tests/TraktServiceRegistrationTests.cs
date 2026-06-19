@@ -26,6 +26,16 @@ public sealed class TraktServiceRegistrationTests
     }
 
     [Fact]
+    public void AddShowTrackerTrakt_Registers_ITraktReleaseClient()
+    {
+        using var provider = CreateServiceProvider();
+
+        var service = provider.GetRequiredService<ITraktReleaseClient>();
+
+        Assert.IsType<TraktReleaseClient>(service);
+    }
+
+    [Fact]
     public void AddShowTrackerTrakt_Registers_TraktOptions()
     {
         using var provider = CreateServiceProvider();
@@ -34,6 +44,7 @@ public sealed class TraktServiceRegistrationTests
 
         Assert.Equal("test-client-id", options.ClientId);
         Assert.Equal(new Uri("https://api.trakt.tv/"), options.BaseAddress);
+        Assert.Equal(30, options.UpcomingReleaseDays);
     }
 
     private static ServiceProvider CreateServiceProvider()

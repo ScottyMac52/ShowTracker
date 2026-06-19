@@ -6,18 +6,43 @@ namespace ShowTracker.Providers.Trakt;
 /// <summary>
 /// Implements <see cref="ITitleTrackingProvider"/> to track titles using the Trakt API.
 /// </summary>
-/// <remarks>
-/// Constructor for the TraktTitleTrackingProvider.
-/// </remarks>
-/// <param name="titleSearchClient"><see cref="ITraktTitleSearchClient"/></param>
-/// <exception cref="ArgumentNullException"><see cref="ITraktTitleSearchClient"/> is required</exception>
-public sealed class TraktTitleTrackingProvider(ITraktTitleSearchClient titleSearchClient) : ITitleTrackingProvider
+public sealed class TraktTitleTrackingProvider : ITitleTrackingProvider
 {
     /// <summary>
     /// Client for searching titles using the Trakt API.
     /// </summary>
-    private readonly ITraktTitleSearchClient _titleSearchClient = titleSearchClient
+    private readonly ITraktTitleSearchClient _titleSearchClient;
+
+    private readonly ITraktReleaseClient _releaseClient;
+
+    /// <summary>
+    /// Constructor retained for existing tests and callers that only exercise search/track behavior.
+    /// </summary>
+    /// <param name="titleSearchClient"><see cref="ITraktTitleSearchClient"/></param>
+    public TraktTitleTrackingProvider(
+        ITraktTitleSearchClient titleSearchClient)
+        : this(
+              titleSearchClient,
+              new MissingTraktReleaseClient())
+    {
+    }
+
+    /// <summary>
+    /// Constructor for the TraktTitleTrackingProvider.
+    /// </summary>
+    /// <param name="titleSearchClient"><see cref="ITraktTitleSearchClient"/></param>
+    /// <param name="releaseClient"><see cref="ITraktReleaseClient"/></param>
+    /// <exception cref="ArgumentNullException"><see cref="ITraktTitleSearchClient"/> is required</exception>
+    public TraktTitleTrackingProvider(
+        ITraktTitleSearchClient titleSearchClient,
+        ITraktReleaseClient releaseClient)
+    {
+        _titleSearchClient = titleSearchClient
             ?? throw new ArgumentNullException(nameof(titleSearchClient));
+
+        _releaseClient = releaseClient
+            ?? throw new ArgumentNullException(nameof(releaseClient));
+    }
 
     /// <inheritdoc/>
     public Task<IReadOnlyList<TitleSearchResult>> SearchTitlesAsync(
@@ -104,7 +129,7 @@ public sealed class TraktTitleTrackingProvider(ITraktTitleSearchClient titleSear
     public Task<IReadOnlyList<UpcomingRelease>> GetUpcomingReleasesAsync(
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return _releaseClient.GetUpcomingReleasesAsync(cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -112,7 +137,12 @@ public sealed class TraktTitleTrackingProvider(ITraktTitleSearchClient titleSear
         string showTitle,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(showTitle))
+            throw new ArgumentException("Show title is required.", nameof(showTitle));
+
+        return _releaseClient.GetNextReleaseAsync(
+            showTitle.Trim(),
+            cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -124,8 +154,8 @@ public sealed class TraktTitleTrackingProvider(ITraktTitleSearchClient titleSear
     }
 
     public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
-    string query,
-    CancellationToken cancellationToken = default)
+        string query,
+        CancellationToken cancellationToken = default)
     {
         return _titleSearchClient.SearchShowsAsync(query, cancellationToken);
     }
@@ -135,5 +165,23 @@ public sealed class TraktTitleTrackingProvider(ITraktTitleSearchClient titleSear
         CancellationToken cancellationToken = default)
     {
         return _titleSearchClient.SearchMoviesAsync(query, cancellationToken);
+    }
+
+    private sealed class MissingTraktReleaseClient : ITraktReleaseClient
+    {
+        public Task<IReadOnlyList<UpcomingRelease>> GetUpcomingReleasesAsync(
+            CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(ITraktReleaseClient)} is required for release operations.");
+        }
+
+        public Task<UpcomingRelease?> GetNextReleaseAsync(
+            string title,
+            CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(ITraktReleaseClient)} is required for release operations.");
+        }
     }
 }
