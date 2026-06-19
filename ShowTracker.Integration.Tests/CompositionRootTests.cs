@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using ShowTracker.Application;
 using ShowTracker.Application.Services.Interfaces;
 using ShowTracker.Persistence;
 using ShowTracker.Providers.Trakt;

@@ -5,6 +5,8 @@ namespace ShowTracker.Providers.Trakt;
 
 public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
 {
+    private const int MaxResults = 10;
+
     private readonly HttpClient _httpClient;
     private readonly TraktOptions _options;
 
@@ -23,31 +25,63 @@ public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
         string query,
         CancellationToken cancellationToken = default)
     {
+        var normalizedQuery = ValidateQuery(query);
+
+        var showResults = await SearchShowsAsync(
+            normalizedQuery,
+            cancellationToken);
+
+        var movieResults = await SearchMoviesAsync(
+            normalizedQuery,
+            cancellationToken);
+
+        return RankResults(
+            showResults.Concat(movieResults),
+            normalizedQuery);
+    }
+
+    public async Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery = ValidateQuery(query);
+
+        var results = await SearchAsync(
+            "show",
+            normalizedQuery,
+            cancellationToken);
+
+        return RankResults(
+            results,
+            normalizedQuery);
+    }
+
+    public async Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery = ValidateQuery(query);
+
+        var results = await SearchAsync(
+            "movie",
+            normalizedQuery,
+            cancellationToken);
+
+        return RankResults(
+            results,
+            normalizedQuery);
+    }
+
+    private string ValidateQuery(
+        string query)
+    {
         if (string.IsNullOrWhiteSpace(query))
             throw new ArgumentException("Search query is required.", nameof(query));
 
         if (string.IsNullOrWhiteSpace(_options.ClientId))
             throw new InvalidOperationException("Trakt client id is required.");
 
-        var normalizedQuery = query.Trim();
-
-        var showResults = await SearchAsync(
-            "show",
-            normalizedQuery,
-            cancellationToken);
-
-        var movieResults = await SearchAsync(
-            "movie",
-            normalizedQuery,
-            cancellationToken);
-
-        return showResults
-            .Concat(movieResults)
-            .OrderByDescending(result =>
-                string.Equals(result.Title, normalizedQuery, StringComparison.OrdinalIgnoreCase))
-            .ThenByDescending(result => result.Score ?? 0)
-            .Take(10)
-            .ToArray();
+        return query.Trim();
     }
 
     private async Task<IReadOnlyList<TitleSearchResult>> SearchAsync(
@@ -80,6 +114,21 @@ public sealed class TraktTitleSearchClient : ITraktTitleSearchClient
             .Where(result => result is not null)
             .Cast<TitleSearchResult>()
             .ToArray() ?? [];
+    }
+
+    private static IReadOnlyList<TitleSearchResult> RankResults(
+        IEnumerable<TitleSearchResult> results,
+        string query)
+    {
+        return results
+            .OrderByDescending(result =>
+                string.Equals(
+                    result.Title,
+                    query,
+                    StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(result => result.Score ?? 0)
+            .Take(MaxResults)
+            .ToArray();
     }
 
     private static TitleSearchResult? Map(

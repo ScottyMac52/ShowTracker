@@ -19,6 +19,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<GetNextEpisodeCommand>();
         services.AddTransient<GetNextReleaseCommand>();
         services.AddTransient<GetUpcomingReleasesCommand>();
+        services.AddTransient<SearchShowCommand>();
+        services.AddTransient<SearchMovieCommand>();
         services.AddTransient<ConsoleApplication>();
         services.AddTransient<IConsoleApplication, ConsoleApplication>();
 
@@ -35,7 +37,10 @@ public static class ServiceCollectionExtensions
                     ["watched-movie"] = provider.GetRequiredService<MarkMovieWatchedCommand>(),
                     ["next-episode"] = provider.GetRequiredService<GetNextEpisodeCommand>(),
                     ["next-release"] = provider.GetRequiredService<GetNextReleaseCommand>(),
-                    ["releases"] = provider.GetRequiredService<GetUpcomingReleasesCommand>()
+                    ["releases"] = provider.GetRequiredService<GetUpcomingReleasesCommand>(),
+                    ["search-show"] = provider.GetRequiredService<SearchShowCommand>(),
+                    ["search-movie"] = provider.GetRequiredService<SearchMovieCommand>(),
+
                 }));
 
         return services;

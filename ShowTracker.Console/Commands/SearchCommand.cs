@@ -39,32 +39,6 @@ public sealed class SearchCommand : IConsoleCommand
         if (results.Count == 0)
             return "No titles found.";
 
-        return FormatResults(results);
-    }
-
-    private static string FormatResults(
-        IReadOnlyList<TitleSearchResult> results)
-    {
-        var builder = new StringBuilder();
-
-        foreach (var result in results)
-        {
-            builder.Append(result.Type);
-            builder.Append(": ");
-            builder.Append(result.Title);
-
-            if (result.Year is not null)
-            {
-                builder.Append(" (");
-                builder.Append(result.Year);
-                builder.Append(')');
-            }
-
-            builder.Append(" [");
-            builder.Append(result.ProviderId);
-            builder.AppendLine("]");
-        }
-
-        return builder.ToString().TrimEnd();
+        return SearchCommandFormatter.Format(results);
     }
 }

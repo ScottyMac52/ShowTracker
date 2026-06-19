@@ -122,4 +122,18 @@ public sealed class TraktTitleTrackingProvider(ITraktTitleSearchClient titleSear
     {
         throw new NotImplementedException();
     }
+
+    public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+    string query,
+    CancellationToken cancellationToken = default)
+    {
+        return _titleSearchClient.SearchShowsAsync(query, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        return _titleSearchClient.SearchMoviesAsync(query, cancellationToken);
+    }
 }

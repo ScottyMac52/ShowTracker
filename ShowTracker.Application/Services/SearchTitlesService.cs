@@ -2,7 +2,7 @@
 using ShowTracker.Domain.Models;
 using ShowTracker.Domain.Services.Interfaces;
 
-namespace ShowTracker.Application.Services;
+namespace ShowTracker.Application;
 
 public sealed class SearchTitlesService : ISearchTitlesService
 {
@@ -22,6 +22,30 @@ public sealed class SearchTitlesService : ISearchTitlesService
             throw new ArgumentException("Search query is required.", nameof(query));
 
         return _titleTrackingProvider.SearchTitlesAsync(
+            query.Trim(),
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            throw new ArgumentException("Show search query is required.", nameof(query));
+
+        return _titleTrackingProvider.SearchShowsAsync(
+            query.Trim(),
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            throw new ArgumentException("Movie search query is required.", nameof(query));
+
+        return _titleTrackingProvider.SearchMoviesAsync(
             query.Trim(),
             cancellationToken);
     }

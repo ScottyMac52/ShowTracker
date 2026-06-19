@@ -379,5 +379,19 @@ public sealed class TraktTitleTrackingProviderTests
 
             return SearchTitlesAsyncHandler(query, cancellationToken);
         }
+
+        public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+    string query,
+    CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
+            string query,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

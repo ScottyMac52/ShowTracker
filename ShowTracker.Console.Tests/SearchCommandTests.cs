@@ -91,6 +91,10 @@ public sealed class SearchCommandTests
     {
         public Func<string, CancellationToken, Task<IReadOnlyList<TitleSearchResult>>>? SearchTitlesAsyncHandler { get; set; }
 
+        public Func<string, CancellationToken, Task<IReadOnlyList<TitleSearchResult>>>? SearchShowsAsyncHandler { get; set; }
+
+        public Func<string, CancellationToken, Task<IReadOnlyList<TitleSearchResult>>>? SearchMoviesAsyncHandler { get; set; }
+
         public Task<IReadOnlyList<TitleSearchResult>> SearchTitlesAsync(
             string query,
             CancellationToken cancellationToken = default)
@@ -99,6 +103,26 @@ public sealed class SearchCommandTests
                 throw new NotImplementedException();
 
             return SearchTitlesAsyncHandler(query, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+            string query,
+            CancellationToken cancellationToken = default)
+        {
+            if (SearchShowsAsyncHandler is null)
+                throw new NotImplementedException();
+
+            return SearchShowsAsyncHandler(query, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
+            string query,
+            CancellationToken cancellationToken = default)
+        {
+            if (SearchMoviesAsyncHandler is null)
+                throw new NotImplementedException();
+
+            return SearchMoviesAsyncHandler(query, cancellationToken);
         }
     }
 }

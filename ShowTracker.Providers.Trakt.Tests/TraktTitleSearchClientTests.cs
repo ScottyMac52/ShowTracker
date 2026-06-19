@@ -373,6 +373,46 @@ public sealed class TraktTitleSearchClientTests
         Assert.DoesNotContain(results, result => result.Title == "Show 11");
     }
 
+    [Fact]
+    public async Task SearchShowsAsync_Uses_Show_Search_Endpoint()
+    {
+        var capturedRequests = new List<HttpRequestMessage>();
+
+        var client = CreateClient(
+        [
+            "[]"
+        ],
+        capturedRequests);
+
+        await client.SearchShowsAsync("Andor");
+
+        var request = Assert.Single(capturedRequests);
+
+        Assert.Equal(
+            "https://api.trakt.tv/search/show?query=Andor",
+            request.RequestUri!.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task SearchMoviesAsync_Uses_Movie_Search_Endpoint()
+    {
+        var capturedRequests = new List<HttpRequestMessage>();
+
+        var client = CreateClient(
+        [
+            "[]"
+        ],
+        capturedRequests);
+
+        await client.SearchMoviesAsync("Dune");
+
+        var request = Assert.Single(capturedRequests);
+
+        Assert.Equal(
+            "https://api.trakt.tv/search/movie?query=Dune",
+            request.RequestUri!.AbsoluteUri);
+    }
+
     private static TraktTitleSearchClient CreateClient(
         IReadOnlyList<string> responseJson)
     {
@@ -397,6 +437,37 @@ public sealed class TraktTitleSearchClientTests
             new TraktOptions
             {
                 ClientId = "test-client-id"
+            });
+    }
+
+    private static TraktTitleSearchClient CreateClient(
+    IReadOnlyList<string> responseJson,
+    List<HttpRequestMessage>? capturedRequests = null)
+    {
+        var responseIndex = 0;
+
+        var httpClient = new HttpClient(new TestHttpMessageHandler(request =>
+        {
+            capturedRequests?.Add(request);
+
+            var content = responseIndex < responseJson.Count
+                ? responseJson[responseIndex]
+                : "[]";
+
+            responseIndex++;
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(content)
+            };
+        }));
+
+        return new TraktTitleSearchClient(
+            httpClient,
+            new TraktOptions
+            {
+                ClientId = "test-client-id",
+                UserAgent = "ShowTracker.Tests/1.0"
             });
     }
 

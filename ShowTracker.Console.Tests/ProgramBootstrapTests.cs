@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ShowTracker.Application.Services.Interfaces;
-using ShowTracker.Console;
 using ShowTracker.Console.Commands;
 using ShowTracker.Console.Commands.Interfaces;
 using ShowTracker.Domain.Models;
@@ -75,6 +74,20 @@ public sealed class ProgramBootstrapTests
     private sealed class TestSearchTitlesService : ISearchTitlesService
     {
         public Task<IReadOnlyList<TitleSearchResult>> SearchTitlesAsync(
+            string query,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<TitleSearchResult>>([]);
+        }
+
+        public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+            string query,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<TitleSearchResult>>([]);
+        }
+
+        public Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
             string query,
             CancellationToken cancellationToken = default)
         {

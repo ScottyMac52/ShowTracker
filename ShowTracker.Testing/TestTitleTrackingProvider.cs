@@ -50,6 +50,16 @@ public sealed class TestTitleTrackingProvider : ITitleTrackingProvider
     /// </summary>
     public Func<string, CancellationToken, Task<UpcomingRelease?>>? GetNextReleaseAsyncHandler { get; set; }
 
+    /// <summary>
+    /// Handler for the SearchShowsAsync method. Tests can set this property to specify custom behavior for searching shows. If this handler is not set when the SearchShowsAsync method is called, a NotImplementedException will be thrown.
+    /// </summary>
+    public Func<string, CancellationToken, Task<IReadOnlyList<TitleSearchResult>>>? SearchShowsAsyncHandler { get; set; }
+
+    /// <summary>
+    /// Handler for the SearchMoviesAsync method. Tests can set this property to specify custom behavior for searching movies. If this handler is not set when the SearchMoviesAsync method is called, a NotImplementedException will be thrown.
+    /// </summary>
+    public Func<string, CancellationToken, Task<IReadOnlyList<TitleSearchResult>>>? SearchMoviesAsyncHandler { get; set; }
+
     /// <inheritdoc/>
     /// <exception cref="NotImplementedException">Thrown if the corresponding handler is not set</exception>"
     public Task<IReadOnlyList<TitleSearchResult>> SearchTitlesAsync(
@@ -144,5 +154,25 @@ public sealed class TestTitleTrackingProvider : ITitleTrackingProvider
             throw new NotImplementedException();
 
         return GetNextReleaseAsyncHandler(showTitle, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<TitleSearchResult>> SearchShowsAsync(
+    string query,
+    CancellationToken cancellationToken = default)
+    {
+        if (SearchShowsAsyncHandler is null)
+            throw new NotImplementedException();
+
+        return SearchShowsAsyncHandler(query, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<TitleSearchResult>> SearchMoviesAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        if (SearchMoviesAsyncHandler is null)
+            throw new NotImplementedException();
+
+        return SearchMoviesAsyncHandler(query, cancellationToken);
     }
 }
