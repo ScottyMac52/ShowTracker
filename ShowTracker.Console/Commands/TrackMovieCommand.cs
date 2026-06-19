@@ -14,9 +14,14 @@ public sealed class TrackMovieCommand : IConsoleCommand
 
     public async Task<string> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var title = CommandArgumentParser.RequireTextAfterCommand(args, "Movie title is required.");
+        var (title, platform) = TrackCommandArgumentParser.Parse(
+            args,
+            "Movie title is required.");
 
-        var trackedTitle = await _trackMovieService.TrackMovieAsync(title, cancellationToken: cancellationToken);
+        var trackedTitle = await _trackMovieService.TrackMovieAsync(
+            title,
+            platform,
+            cancellationToken);
 
         return $"Tracked movie: {trackedTitle.Title} [{trackedTitle.ProviderId}]";
     }

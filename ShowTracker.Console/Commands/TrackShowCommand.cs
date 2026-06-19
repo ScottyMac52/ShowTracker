@@ -14,9 +14,12 @@ public sealed class TrackShowCommand : IConsoleCommand
 
     public async Task<string> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var title = CommandArgumentParser.RequireTextAfterCommand(args, "Show title is required.");
+        var (title, platform) = TrackCommandArgumentParser.Parse(args, "Show title is required.");
 
-        var trackedTitle = await _trackShowService.TrackShowAsync(title, cancellationToken: cancellationToken);
+        var trackedTitle = await _trackShowService.TrackShowAsync(
+            title,
+            platform,
+            cancellationToken);
 
         return $"Tracked show: {trackedTitle.Title} [{trackedTitle.ProviderId}]";
     }

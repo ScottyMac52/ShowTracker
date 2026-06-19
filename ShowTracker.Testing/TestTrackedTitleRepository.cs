@@ -65,11 +65,10 @@ public sealed class TestTrackedTitleRepository : ITrackedTitleRepository
     /// </summary>
     /// <param name="cancellationToken">Token</param>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     public Task<IReadOnlyList<TrackedTitle>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         if (GetAllAsyncHandler is null)
-            throw new NotImplementedException();
+            return Task.FromResult<IReadOnlyList<TrackedTitle>>([]);
 
         return GetAllAsyncHandler(cancellationToken);
     }

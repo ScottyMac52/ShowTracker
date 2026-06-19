@@ -2,7 +2,10 @@
   "profiles": {
     "ShowTracker.Console": {
       "commandName": "Project",
-      "commandLineArgs": "search andor"
+      "commandLineArgs": "search andor",
+      "environmentVariables": {
+        "TRAKT_CLIENT_ID": "e631ea2772a6eb58e3d0f50eb8fded7aed3c942673de81503aca7719474beec2"
+      }
     }
   }
 }

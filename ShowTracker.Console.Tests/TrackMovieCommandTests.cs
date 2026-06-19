@@ -7,7 +7,7 @@ namespace ShowTracker.Console.Tests;
 public sealed class TrackMovieCommandTests
 {
     [Fact]
-    public async Task ExecuteAsync_Tracks_Movie()
+    public async Task ExecuteAsync_Tracks_Movie_By_Title()
     {
         string? requestedTitle = null;
 
@@ -17,18 +17,74 @@ public sealed class TrackMovieCommandTests
             {
                 requestedTitle = title;
 
-                return Task.FromResult(new TrackedTitle(
-                    ProviderId: "trakt:movie:654321",
-                    Title: title,
-                    Type: TrackedTitleType.Movie));
+                return Task.FromResult(
+                    new TrackedTitle(
+                        ProviderId: "12",
+                        Title: "Star Wars",
+                        Type: TrackedTitleType.Movie,
+                        Platform: platform));
             }
         };
 
         var command = new TrackMovieCommand(service);
 
-        await command.ExecuteAsync(["track-movie", "Dune", "Part", "Two"]);
+        await command.ExecuteAsync(["track-movie", "Star", "Wars"]);
 
-        Assert.Equal("Dune Part Two", requestedTitle);
+        Assert.Equal("Star Wars", requestedTitle);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Tracks_Movie_By_Provider_Id()
+    {
+        string? requestedTitle = null;
+
+        var service = new TestTrackMovieService
+        {
+            TrackMovieAsyncHandler = (title, platform, _) =>
+            {
+                requestedTitle = title;
+
+                return Task.FromResult(
+                    new TrackedTitle(
+                        ProviderId: "12",
+                        Title: "Star Wars",
+                        Type: TrackedTitleType.Movie,
+                        Platform: platform));
+            }
+        };
+
+        var command = new TrackMovieCommand(service);
+
+        await command.ExecuteAsync(["track-movie", "12"]);
+
+        Assert.Equal("12", requestedTitle);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Trims_Title_Or_Provider_Id()
+    {
+        string? requestedTitle = null;
+
+        var service = new TestTrackMovieService
+        {
+            TrackMovieAsyncHandler = (title, platform, _) =>
+            {
+                requestedTitle = title;
+
+                return Task.FromResult(
+                    new TrackedTitle(
+                        ProviderId: "12",
+                        Title: "Star Wars",
+                        Type: TrackedTitleType.Movie,
+                        Platform: platform));
+            }
+        };
+
+        var command = new TrackMovieCommand(service);
+
+        await command.ExecuteAsync(["track-movie", "  Star Wars  "]);
+
+        Assert.Equal("Star Wars", requestedTitle);
     }
 
     [Fact]
@@ -36,29 +92,98 @@ public sealed class TrackMovieCommandTests
     {
         var service = new TestTrackMovieService
         {
-            TrackMovieAsyncHandler = (_, _, _) =>
-                Task.FromResult(new TrackedTitle(
-                    ProviderId: "trakt:movie:654321",
-                    Title: "Dune: Part Two",
-                    Type: TrackedTitleType.Movie))
+            TrackMovieAsyncHandler = (_, platform, _) =>
+                Task.FromResult(
+                    new TrackedTitle(
+                        ProviderId: "12",
+                        Title: "Star Wars",
+                        Type: TrackedTitleType.Movie,
+                        Platform: platform))
         };
 
         var command = new TrackMovieCommand(service);
 
-        var output = await command.ExecuteAsync(["track-movie", "Dune", "Part", "Two"]);
+        var output = await command.ExecuteAsync(["track-movie", "Star", "Wars"]);
 
         Assert.Contains("Tracked movie", output);
-        Assert.Contains("Dune: Part Two", output);
-        Assert.Contains("trakt:movie:654321", output);
+        Assert.Contains("Star Wars", output);
+        Assert.Contains("12", output);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Passes_Platform_When_Provided()
+    {
+        string? requestedPlatform = null;
+
+        var service = new TestTrackMovieService
+        {
+            TrackMovieAsyncHandler = (title, platform, _) =>
+            {
+                requestedPlatform = platform;
+
+                return Task.FromResult(
+                    new TrackedTitle(
+                        ProviderId: "12",
+                        Title: title,
+                        Type: TrackedTitleType.Movie,
+                        Platform: platform));
+            }
+        };
+
+        var command = new TrackMovieCommand(service);
+
+        await command.ExecuteAsync(["track-movie", "Star", "Wars", "--platform", "Disney+"]);
+
+        Assert.Equal("Disney+", requestedPlatform);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Passes_Multi_Word_Platform_When_Provided()
+    {
+        string? requestedPlatform = null;
+
+        var service = new TestTrackMovieService
+        {
+            TrackMovieAsyncHandler = (title, platform, _) =>
+            {
+                requestedPlatform = platform;
+
+                return Task.FromResult(
+                    new TrackedTitle(
+                        ProviderId: "12",
+                        Title: title,
+                        Type: TrackedTitleType.Movie,
+                        Platform: platform));
+            }
+        };
+
+        var command = new TrackMovieCommand(service);
+
+        await command.ExecuteAsync(["track-movie", "Star", "Wars", "--platform", "Amazon", "Prime"]);
+
+        Assert.Equal("Amazon Prime", requestedPlatform);
     }
 
     [Fact]
     public async Task ExecuteAsync_Rejects_Missing_Title()
     {
-        var command = new TrackMovieCommand(new TestTrackMovieService());
+        var service = new TestTrackMovieService();
+
+        var command = new TrackMovieCommand(service);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             command.ExecuteAsync(["track-movie"]));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Rejects_Missing_Platform_Value()
+    {
+        var service = new TestTrackMovieService();
+
+        var command = new TrackMovieCommand(service);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            command.ExecuteAsync(["track-movie", "Star", "Wars", "--platform"]));
     }
 
     private sealed class TestTrackMovieService : ITrackMovieService

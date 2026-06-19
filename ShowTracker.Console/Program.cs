@@ -8,7 +8,6 @@ namespace ShowTracker.Console;
 
 public static class Program
 {
-    private const string ClientId = "bf928c789cc6ccb47e80bbbf8f3575fd9e86a9ba946e13b34ca1a2c187c91e32";
 
     public static async Task<int> Main(string[] args)
     {
@@ -30,9 +29,11 @@ public static class Program
 
         services.AddShowTrackerTrakt(options =>
         {
-            options.ClientId =
-                Environment.GetEnvironmentVariable("TRAKT_CLIENT_ID") ?? ClientId ?? throw new InvalidOperationException("TRAKT_CLIENT_ID is not configured.");
+            var clientId = Environment.GetEnvironmentVariable("TRAKT_CLIENT_ID");
+            if (string.IsNullOrWhiteSpace(clientId))
+                throw new InvalidOperationException("TRAKT_CLIENT_ID environment variable is required. Set it in VS project properties or your terminal.");
 
+            options.ClientId = clientId;
             options.UserAgent = "ShowTracker/0.1";
         });
 

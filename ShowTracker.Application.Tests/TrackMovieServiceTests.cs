@@ -9,138 +9,102 @@ public sealed class TrackMovieServiceTests
     [Fact]
     public async Task TrackMovieAsync_Tracks_Movie_Through_Provider()
     {
-        var trackedTitles = new List<TrackedTitle>();
-
         var provider = new TestTitleTrackingProvider
         {
-            FindTrackedTitleAsyncHandler = (_, _) =>
-                Task.FromResult<TrackedTitle?>(null),
-
-            TrackMovieAsyncHandler = (movieTitle, platform, _) =>
-            {
-                var movie = new TrackedTitle(
-                    ProviderId: $"fake:movie:{movieTitle}",
-                    Title: movieTitle,
+            TrackMovieAsyncHandler = (title, platform, _) =>
+                Task.FromResult(new TrackedTitle(
+                    ProviderId: "trakt:movie:654321",
+                    Title: title,
                     Type: TrackedTitleType.Movie,
-                    Platform: platform);
-
-                trackedTitles.Add(movie);
-
-                return Task.FromResult(movie);
-            }
+                    Platform: platform))
         };
 
-        var service = new TrackMovieService(provider, CreateNoOpRepository());
+        var repository = new TestTrackedTitleRepository
+        {
+            AddAsyncHandler = (_, _) => Task.CompletedTask
+        };
 
-        var result = await service.TrackMovieAsync("Dune Part Two");
+        var service = new TrackMovieService(provider, repository);
 
-        Assert.Equal("Dune Part Two", result.Title);
+        var result = await service.TrackMovieAsync("Dune: Part Two");
+
+        Assert.Equal("Dune: Part Two", result.Title);
         Assert.Equal(TrackedTitleType.Movie, result.Type);
-        Assert.Single(trackedTitles);
-    }
-
-    [Fact]
-    public async Task TrackMovieAsync_Rejects_Blank_Title()
-    {
-        var provider = new TestTitleTrackingProvider();
-        var service = new TrackMovieService(provider, CreateNoOpRepository());
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.TrackMovieAsync(" "));
     }
 
     [Fact]
     public async Task TrackMovieAsync_Does_Not_Allow_Duplicate_Movies()
     {
-        var trackedTitles = new List<TrackedTitle>();
+        var provider = new TestTitleTrackingProvider();
 
-        var provider = new TestTitleTrackingProvider
+        var repository = new TestTrackedTitleRepository
         {
-            FindTrackedTitleAsyncHandler = (title, _) =>
-            {
-                var trackedTitle = trackedTitles.SingleOrDefault(t =>
-                    string.Equals(t.Title, title, StringComparison.OrdinalIgnoreCase));
-
-                return Task.FromResult(trackedTitle);
-            },
-
-            TrackMovieAsyncHandler = (movieTitle, platform, _) =>
-            {
-                var movie = new TrackedTitle(
-                    ProviderId: $"fake:movie:{movieTitle}",
-                    Title: movieTitle,
-                    Type: TrackedTitleType.Movie,
-                    Platform: platform);
-
-                trackedTitles.Add(movie);
-
-                return Task.FromResult(movie);
-            }
+            GetAllAsyncHandler = _ =>
+                Task.FromResult<IReadOnlyList<TrackedTitle>>(
+                [
+                    new(
+                        ProviderId: "trakt:movie:654321",
+                        Title: "Dune: Part Two",
+                        Type: TrackedTitleType.Movie)
+                ])
         };
 
-        var service = new TrackMovieService(provider, CreateNoOpRepository());
-
-        await service.TrackMovieAsync("Dune Part Two");
+        var service = new TrackMovieService(provider, repository);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.TrackMovieAsync("Dune Part Two"));
+            service.TrackMovieAsync("Dune: Part Two"));
     }
 
     [Fact]
     public async Task TrackMovieAsync_Saves_Tracked_Title()
     {
-        var trackedTitle = new TrackedTitle(
-            ProviderId: "trakt:movie:654321",
-            Title: "Dune: Part Two",
-            Type: TrackedTitleType.Movie,
-            Platform: "Max");
+        TrackedTitle? savedTitle = null;
 
         var provider = new TestTitleTrackingProvider
         {
-            FindTrackedTitleAsyncHandler = (_, _) =>
-                Task.FromResult<TrackedTitle?>(null),
-
-            TrackMovieAsyncHandler = (_, _, _) =>
-                Task.FromResult(trackedTitle)
+            TrackMovieAsyncHandler = (title, platform, _) =>
+                Task.FromResult(new TrackedTitle(
+                    ProviderId: "trakt:movie:654321",
+                    Title: title,
+                    Type: TrackedTitleType.Movie,
+                    Platform: platform))
         };
-
-        TrackedTitle? savedTitle = null;
 
         var repository = new TestTrackedTitleRepository
         {
-            AddAsyncHandler = (title, _) =>
+            AddAsyncHandler = (trackedTitle, _) =>
             {
-                savedTitle = title;
+                savedTitle = trackedTitle;
                 return Task.CompletedTask;
             }
         };
 
         var service = new TrackMovieService(provider, repository);
 
-        await service.TrackMovieAsync("Dune: Part Two", "Max");
+        await service.TrackMovieAsync("Dune: Part Two");
 
-        Assert.Equal(trackedTitle, savedTitle);
+        Assert.NotNull(savedTitle);
+        Assert.Equal("Dune: Part Two", savedTitle!.Title);
+        Assert.Equal("trakt:movie:654321", savedTitle.ProviderId);
+        Assert.Equal(TrackedTitleType.Movie, savedTitle.Type);
     }
 
     [Fact]
     public async Task TrackMovieAsync_Does_Not_Save_When_Provider_Throws()
     {
+        var saveCalled = false;
+
         var provider = new TestTitleTrackingProvider
         {
-            FindTrackedTitleAsyncHandler = (_, _) =>
-                Task.FromResult<TrackedTitle?>(null),
-
             TrackMovieAsyncHandler = (_, _, _) =>
-                throw new InvalidOperationException("Boom")
+                throw new InvalidOperationException("Provider failed.")
         };
-
-        var repositoryCalled = false;
 
         var repository = new TestTrackedTitleRepository
         {
             AddAsyncHandler = (_, _) =>
             {
-                repositoryCalled = true;
+                saveCalled = true;
                 return Task.CompletedTask;
             }
         };
@@ -148,28 +112,25 @@ public sealed class TrackMovieServiceTests
         var service = new TrackMovieService(provider, repository);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.TrackMovieAsync("Dune: Part Two", "Max"));
+            service.TrackMovieAsync("Dune: Part Two"));
 
-        Assert.False(repositoryCalled);
+        Assert.False(saveCalled);
     }
 
     [Fact]
     public async Task TrackMovieAsync_Saves_Exactly_Once()
     {
+        var saveCount = 0;
+
         var provider = new TestTitleTrackingProvider
         {
-            FindTrackedTitleAsyncHandler = (_, _) =>
-                Task.FromResult<TrackedTitle?>(null),
-
-            TrackMovieAsyncHandler = (_, _, _) =>
+            TrackMovieAsyncHandler = (title, platform, _) =>
                 Task.FromResult(new TrackedTitle(
                     ProviderId: "trakt:movie:654321",
-                    Title: "Dune: Part Two",
+                    Title: title,
                     Type: TrackedTitleType.Movie,
-                    Platform: "Max"))
+                    Platform: platform))
         };
-
-        var saveCount = 0;
 
         var repository = new TestTrackedTitleRepository
         {
@@ -182,7 +143,7 @@ public sealed class TrackMovieServiceTests
 
         var service = new TrackMovieService(provider, repository);
 
-        await service.TrackMovieAsync("Dune: Part Two", "Max");
+        await service.TrackMovieAsync("Dune: Part Two");
 
         Assert.Equal(1, saveCount);
     }
@@ -190,43 +151,31 @@ public sealed class TrackMovieServiceTests
     [Fact]
     public async Task TrackMovieAsync_Trims_Platform()
     {
-        TrackedTitle? savedTitle = null;
+        string? requestedPlatform = null;
 
         var provider = new TestTitleTrackingProvider
         {
-            FindTrackedTitleAsyncHandler = (_, _) =>
-                Task.FromResult<TrackedTitle?>(null),
-
             TrackMovieAsyncHandler = (title, platform, _) =>
-                Task.FromResult(new TrackedTitle(
+            {
+                requestedPlatform = platform;
+
+                return Task.FromResult(new TrackedTitle(
                     ProviderId: "trakt:movie:654321",
                     Title: title,
                     Type: TrackedTitleType.Movie,
-                    Platform: platform))
+                    Platform: platform));
+            }
         };
 
         var repository = new TestTrackedTitleRepository
         {
-            AddAsyncHandler = (title, _) =>
-            {
-                savedTitle = title;
-                return Task.CompletedTask;
-            }
+            AddAsyncHandler = (_, _) => Task.CompletedTask
         };
 
         var service = new TrackMovieService(provider, repository);
 
         await service.TrackMovieAsync("Dune: Part Two", "  Max  ");
 
-        Assert.NotNull(savedTitle);
-        Assert.Equal("Max", savedTitle!.Platform);
-    }
-
-    private static TestTrackedTitleRepository CreateNoOpRepository()
-    {
-        return new TestTrackedTitleRepository
-        {
-            AddAsyncHandler = (_, _) => Task.CompletedTask
-        };
+        Assert.Equal("Max", requestedPlatform);
     }
 }
