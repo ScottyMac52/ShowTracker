@@ -21,5 +21,4 @@ jobs:
       ci_mode: false
       create_release: true
       enable_installer: true
-    secrets: inherit
-    
+      
