@@ -9,12 +9,20 @@ on:
       - synchronize
       - reopened
       - ready_for_review
+    paths-ignore:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - 'README.md'
 
   push:
     branches:
       - main
     tags:
       - 'v*.*.*.*'
+    paths-ignore:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - 'README.md'
 
   workflow_dispatch:
 
