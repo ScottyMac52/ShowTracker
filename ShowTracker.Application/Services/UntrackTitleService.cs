@@ -4,7 +4,7 @@ using ShowTracker.Domain.Services.Interfaces;
 namespace ShowTracker.Application.Services;
 
 /// <summary>
-/// Service for untracking a title. It uses an <see cref="ITrackedTitleRepository"/> to access the tracked titles data and remove a title from the list of tracked titles for the user. The service validates the input provider ID and checks if the title is being tracked, and if so, it removes the title from the tracking list. If the provider ID is invalid or if the title is not being tracked, it throws an appropriate exception.
+/// Service for untracking a title. It uses an <see cref="ITrackedTitleRepository"/> to access the tracked titles data and remove a title from the list of tracked titles for the user. The service validates the input provider ID or title and removes the matching tracked title. If multiple tracked titles have the same title, the caller must use the provider ID.
 /// </summary>
 public sealed class UntrackTitleService : IUntrackTitleService
 {
@@ -22,21 +22,65 @@ public sealed class UntrackTitleService : IUntrackTitleService
     }
 
     /// <summary>
-    /// Untracks a title for the user. This method validates the input provider ID and checks if the title is being tracked, and if so, it removes the title from the tracking list. The method throws an exception if the input provider ID is invalid or if the title is not being tracked.
+    /// Untracks a title for the user. The input may be either a provider ID or an exact tracked title name.
     /// </summary>
-    /// <param name="providerId"></param>
+    /// <param name="titleOrProviderId"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public Task UntrackAsync(
-        string providerId,
+    /// <exception cref="InvalidOperationException"></exception>
+    public async Task UntrackAsync(
+        string titleOrProviderId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(providerId))
-            throw new ArgumentException("Provider id is required.", nameof(providerId));
+        if (string.IsNullOrWhiteSpace(titleOrProviderId))
+            throw new ArgumentException("Title or provider id is required.", nameof(titleOrProviderId));
 
-        return _trackedTitleRepository.RemoveAsync(
-            providerId.Trim(),
+        var normalizedTarget = titleOrProviderId.Trim();
+
+        var trackedTitles = await _trackedTitleRepository.GetAllAsync(
+            cancellationToken);
+
+        var providerIdMatch = trackedTitles.FirstOrDefault(title =>
+            string.Equals(
+                title.ProviderId,
+                normalizedTarget,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (providerIdMatch is not null)
+        {
+            await _trackedTitleRepository.RemoveAsync(
+                providerIdMatch.ProviderId,
+                cancellationToken);
+
+            return;
+        }
+
+        var titleMatches = trackedTitles
+            .Where(title =>
+                string.Equals(
+                    title.Title,
+                    normalizedTarget,
+                    StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (titleMatches.Count == 1)
+        {
+            await _trackedTitleRepository.RemoveAsync(
+                titleMatches[0].ProviderId,
+                cancellationToken);
+
+            return;
+        }
+
+        if (titleMatches.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Multiple tracked titles match '{normalizedTarget}'. Use the provider id shown by the tracked command.");
+        }
+
+        await _trackedTitleRepository.RemoveAsync(
+            normalizedTarget,
             cancellationToken);
     }
 }
