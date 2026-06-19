@@ -53,6 +53,7 @@ ShowTracker.Providers.Trakt (TraktTitleSearchClient, TraktTitleTrackingProvider)
 - **Testing**: Separate test projects per layer + shared `ShowTracker.Testing` + integration tests.
 
 ## Command Set
+
 - search <query>
 - search-show <query>
 - search-movie <query>
@@ -67,4 +68,14 @@ ShowTracker.Providers.Trakt (TraktTitleSearchClient, TraktTitleTrackingProvider)
 - releases
 - next-release <title>
 - help
+
+## License
+
+MIT License – see [LICENSE](LICENSE) file.
+
+## Author
+
+ScottyMac52 (Scott McIntosh) – Retired Principal Software Engineer, ex-Navy (USS New Jersey (BB-62) and USS Truxtun (CGN-35)), DCS sim nerd, USPSA shooter, and media consumer who got tired of forgetting what he's watching.
+
+---
 
