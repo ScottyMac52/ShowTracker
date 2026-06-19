@@ -9,4 +9,6 @@ public sealed class TraktOptions
     public string UserAgent { get; set; } = "ShowTracker/0.1";
 
     public Uri BaseAddress { get; set; } = new("https://api.trakt.tv/");
+
+    public int UpcomingReleaseDays { get; set; } = 30;
 }
