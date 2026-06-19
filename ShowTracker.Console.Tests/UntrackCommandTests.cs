@@ -8,22 +8,43 @@ public sealed class UntrackCommandTests
     [Fact]
     public async Task ExecuteAsync_Untracks_Title()
     {
-        string? removedProviderId = null;
+        string? removedTitleOrProviderId = null;
 
         var service = new TestUntrackTitleService
         {
-            UntrackAsyncHandler = (providerId, _) =>
+            UntrackAsyncHandler = (titleOrProviderId, _) =>
             {
-                removedProviderId = providerId;
+                removedTitleOrProviderId = titleOrProviderId;
                 return Task.CompletedTask;
             }
         };
 
         var command = new UntrackCommand(service);
 
-        await command.ExecuteAsync(["untrack", "trakt:show:12345"]);
+        await command.ExecuteAsync(["untrack", "The Boys"]);
 
-        Assert.Equal("trakt:show:12345", removedProviderId);
+        Assert.Equal("The Boys", removedTitleOrProviderId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Untracks_Provider_Id()
+    {
+        string? removedTitleOrProviderId = null;
+
+        var service = new TestUntrackTitleService
+        {
+            UntrackAsyncHandler = (titleOrProviderId, _) =>
+            {
+                removedTitleOrProviderId = titleOrProviderId;
+                return Task.CompletedTask;
+            }
+        };
+
+        var command = new UntrackCommand(service);
+
+        await command.ExecuteAsync(["untrack", "139960"]);
+
+        Assert.Equal("139960", removedTitleOrProviderId);
     }
 
     [Fact]
@@ -36,14 +57,14 @@ public sealed class UntrackCommandTests
 
         var command = new UntrackCommand(service);
 
-        var output = await command.ExecuteAsync(["untrack", "trakt:show:12345"]);
+        var output = await command.ExecuteAsync(["untrack", "The Boys"]);
 
         Assert.Contains("Untracked title", output);
-        Assert.Contains("trakt:show:12345", output);
+        Assert.Contains("The Boys", output);
     }
 
     [Fact]
-    public async Task ExecuteAsync_Rejects_Missing_Provider_Id()
+    public async Task ExecuteAsync_Rejects_Missing_Title_Or_Provider_Id()
     {
         var command = new UntrackCommand(new TestUntrackTitleService());
 
@@ -56,13 +77,13 @@ public sealed class UntrackCommandTests
         public Func<string, CancellationToken, Task>? UntrackAsyncHandler { get; set; }
 
         public Task UntrackAsync(
-            string providerId,
+            string titleOrProviderId,
             CancellationToken cancellationToken = default)
         {
             if (UntrackAsyncHandler is null)
                 throw new NotImplementedException();
 
-            return UntrackAsyncHandler(providerId, cancellationToken);
+            return UntrackAsyncHandler(titleOrProviderId, cancellationToken);
         }
     }
 }

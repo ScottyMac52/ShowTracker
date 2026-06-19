@@ -14,10 +14,10 @@ public sealed class UntrackCommand : IConsoleCommand
 
     public async Task<string> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var providerId = CommandArgumentParser.RequireTextAfterCommand(args, "Provider id is required.");
+        var titleOrProviderId = CommandArgumentParser.RequireTextAfterCommand(args, "Title or provider id is required.");
 
-        await _untrackTitleService.UntrackAsync(providerId, cancellationToken);
+        await _untrackTitleService.UntrackAsync(titleOrProviderId, cancellationToken);
 
-        return $"Untracked title: {providerId}";
+        return $"Untracked title: {titleOrProviderId}";
     }
 }
