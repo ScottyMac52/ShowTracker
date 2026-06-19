@@ -25,7 +25,6 @@ jobs:
       run_build_release: false
       ci_mode: true
       create_release: false
-    secrets: inherit
 
   build-on-main:
     name: Build on PR / Merge to Main
@@ -39,4 +38,3 @@ jobs:
       ci_mode: false
       create_release: false
       enable_installer: false
-    secrets: inherit
