@@ -1,7 +1,6 @@
 name: CI / Build / Release
 
 on:
-  # CI on every push to any branch
   push:
     branches:
       - '**'
@@ -10,7 +9,6 @@ on:
     paths-ignore:
       - '.github/workflows/**'
 
-  # Full build on PRs into main (no release)
   pull_request:
     branches:
       - main
@@ -58,7 +56,6 @@ jobs:
       run_build_release: true
       ci_mode: false
       create_release: true
-      enable_installer: true 
+      enable_installer: true
     secrets:
       inherit: true
-      
