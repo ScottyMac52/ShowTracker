@@ -7,20 +7,28 @@ public sealed class GetNextReleaseCommand : IConsoleCommand
 {
     private readonly IGetNextReleaseService _getNextReleaseService;
 
-    public GetNextReleaseCommand(IGetNextReleaseService getNextReleaseService)
+    public GetNextReleaseCommand(
+        IGetNextReleaseService getNextReleaseService)
     {
-        _getNextReleaseService = getNextReleaseService ?? throw new ArgumentNullException(nameof(getNextReleaseService));
+        _getNextReleaseService = getNextReleaseService
+            ?? throw new ArgumentNullException(nameof(getNextReleaseService));
     }
 
-    public async Task<string> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
+    public async Task<string> ExecuteAsync(
+        string[] args,
+        CancellationToken cancellationToken = default)
     {
-        var title = CommandArgumentParser.RequireTextAfterCommand(args, "Title is required.");
+        var title = CommandArgumentParser.RequireTextAfterCommand(
+            args,
+            "Title is required.");
 
-        var release = await _getNextReleaseService.GetNextReleaseAsync(title, cancellationToken);
+        var release = await _getNextReleaseService.GetNextReleaseAsync(
+            title,
+            cancellationToken);
 
         if (release is null)
-            return "No next release found.";
+            return $"No upcoming release found for: {title}";
 
-        return $"Next release: {release.Title} on {release.ReleaseDate:yyyy-MM-dd}";
+        return UpcomingReleaseFormatter.Format(release);
     }
 }
